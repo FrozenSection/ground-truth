@@ -8,7 +8,7 @@ California — a sealed, set-up-once gift, so robustness and graceful failure ma
 more than configurability.
 
 > Codename "Ground Truth" — a geoscience/remote-sensing term for field data that
-> validates remote measurements. Provisional; rename freely.
+> validates remote measurements.
 
 ## Hardware
 - Adafruit **ESP32 Feather V2** (ESP32-PICO-MINI-02, 8 MB flash)
@@ -40,8 +40,3 @@ Friend covers the onboard buttons.
 ## Status
 **Gate 0 — skeleton.** Builds; renders a hello frame; serial heartbeat. Application
 logic lands gate by gate (see roadmap).
-
----
-*This repo is intended to be shared publicly. Before going public, run the
-personal-data audit in [docs/ROADMAP.md](docs/ROADMAP.md) — names out of committed
-code, no secrets, full-history scan.*
