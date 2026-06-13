@@ -14,7 +14,8 @@ namespace {
   const size_t PLACE_CAP    = 48;
   const char*  FDSN = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 
-  std::vector<seismic::Quake> g_events;
+  std::vector<seismic::Quake>   g_events;
+  std::vector<seismic::Cluster> g_clusters;
   time_t  g_lastFetch  = 0;
   bool    g_capped     = false;
   int     g_headline   = -1;
@@ -81,6 +82,45 @@ namespace {
     } else {
       g_headline = bestSignificant(0);
     }
+  }
+
+  // Collapse tight swarms (>= SWARM_MIN_COUNT within SWARM_RADIUS_KM) to one
+  // marker. The headline is excluded so it always shows as its own dot.
+  void computeClusters() {
+    g_clusters.clear();
+    for (auto& q : g_events) q.clustered = false;
+    std::vector<bool> assigned(g_events.size(), false);
+    if (g_headline >= 0) assigned[g_headline] = true;
+
+    for (size_t i = 0; i < g_events.size(); i++) {
+      if (assigned[i]) continue;
+      std::vector<size_t> group;
+      for (size_t j = 0; j < g_events.size(); j++) {
+        if (assigned[j]) continue;
+        if (haversineKm(g_events[i].lat, g_events[i].lon,
+                        g_events[j].lat, g_events[j].lon) <= SWARM_RADIUS_KM)
+          group.push_back(j);
+      }
+      if ((int)group.size() < SWARM_MIN_COUNT) continue;
+
+      double sLat = 0, sLon = 0; bool felt = false;
+      for (size_t k : group) {
+        assigned[k] = true;
+        g_events[k].clustered = true;
+        sLat += g_events[k].lat; sLon += g_events[k].lon;
+        if (g_events[k].felt > 0) felt = true;
+      }
+      double cLat = sLat / group.size(), cLon = sLon / group.size();
+      const auto& c = settings::get();
+      seismic::Cluster cu;
+      cu.distKm     = haversineKm(c.lat, c.lon, cLat, cLon);
+      cu.bearingDeg = bearingDeg(c.lat, c.lon, cLat, cLon);
+      cu.count      = (int)group.size();
+      cu.anyFelt    = felt;
+      g_clusters.push_back(cu);
+    }
+    if (!g_clusters.empty())
+      Serial.printf("[usgs] %d swarm cluster(s) collapsed\n", (int)g_clusters.size());
   }
 
   void updateRecord() {
@@ -168,10 +208,12 @@ bool fetch() {
     if (q.place.length() > PLACE_CAP) q.place = q.place.substring(0, PLACE_CAP);
     q.distKm     = haversineKm(c.lat, c.lon, q.lat, q.lon);
     q.bearingDeg = bearingDeg(c.lat, c.lon, q.lat, q.lon);
+    q.clustered  = false;
     g_events.push_back(q);
   }
 
   selectHeadline();
+  computeClusters();
   updateRecord();
   g_lastFetch = timekeeper::synced() ? timekeeper::now() : 1;
   Serial.printf("[usgs] %d events%s, headline idx %d\n",
@@ -182,6 +224,7 @@ bool fetch() {
 bool   hasData()   { return g_lastFetch != 0; }
 time_t lastFetch() { return g_lastFetch; }
 const std::vector<Quake>& events() { return g_events; }
+const std::vector<Cluster>& clusters() { return g_clusters; }
 int  headlineIndex() { return g_headline; }
 bool count7dCapped() { return g_capped; }
 

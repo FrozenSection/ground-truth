@@ -4,6 +4,18 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.5.0] — 2026-06-13 · Swarm clustering + double-ring headline (designer round 2)
+- **Swarm collapse:** ≥ 6 events within ~15 km collapse to one `×n` map marker
+  (computed in firmware so the panel and web mirror share one source of truth); the
+  headline always breaks out as its own dot. Stops The Geysers swarm from ink-blobbing.
+  `/api/state` gains a `clusters[]` array and a per-event `cl` flag.
+- **Double-ring headline** in the map mirror — distinct from the hollow "shallow"
+  glyph so a shallow headline never reads as a plain shallow dot.
+- **Descriptor collapse:** 7-day range shows a single `M2.6` when it's one magnitude;
+  `1 felt nearby` → `none felt` when none.
+- Folds in the designer's production round (Public Sans, WiFi-QR-on-setup, PII
+  scrubbed to a build-time placeholder — all already reflected in the spec/firmware).
+
 ## [0.4.1] — 2026-06-13 · Hybrid headline
 - **Headline rule = hybrid:** most-significant event in the **last 24 h** (keeps the
   hero fresh when there's recent activity), falling back to most-significant over the

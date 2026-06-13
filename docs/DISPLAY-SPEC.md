@@ -111,7 +111,12 @@ Radial map (left, center ~cx 100, cy 170):
   room. This is the chosen scale.) Outer ring solid; inner two dashed.
 - **N** label + center cross at the location; tiny `300 km` label on the outer ring.
 - **Each quake (last 7 days) = a dot** placed by true bearing + distance, **sized by
-  magnitude** (≈ 2 px M2 → 5 px M4+). Headline event gets a thin ring.
+  magnitude** (≈ 2 px M2 → 5 px M4+).
+- **Headline = double ring** (r ≈ 8.5 + 6 outlines, r 4 filled center) — distinct from
+  the hollow "shallow" glyph so a shallow headline never reads as a plain shallow dot.
+- **Swarm collapse** (designer rule, in firmware): ≥ 6 events within ~15 km collapse
+  to one marker — dashed halo + filled dot + **`×n`** count. The headline always breaks
+  out as its own dot; the cluster counts the remainder.
 - **Depth cue (kept, but tune):** hollow = shallow, filled = deep. Threshold **≈ 8 km**
   (most NorCal crustal quakes are < 15 km; 10 km marked nearly everything "shallow").
   This is the 3rd thing each dot encodes — if it reads muddy on the panel, it's the
@@ -121,7 +126,8 @@ Stat column (right, x 205–392) — **B-tight** (fills the dead space the earli
 - **`3`** big (36 px) = 24 h count, with a two-item descriptor to its right:
   `IN 24 H` (caps label) over `1 felt nearby`.
 - **`18`** big (36 px) = 7 d count, descriptor `IN 7 DAYS` over the **magnitude range**
-  `M2.0 – M4.2`.
+  `M2.0 – M4.2` (collapses to a single `M2.6` when the range is one magnitude;
+  `1 felt nearby` → `none felt` when none).
 - A 1 px divider, then the **depth key**: hollow ○ `shallow · <8 km`, filled ● `deep ·
   ≥8 km`.
 - One line: **`Record  M4.8 · May 3`** (all-time max since power-on, persisted in NVS).

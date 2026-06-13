@@ -19,7 +19,16 @@ namespace seismic {
     bool    alert;        // PAGER alert present
     float   distKm;       // from home
     float   bearingDeg;   // 0..360 from home (0 = N)
+    bool    clustered;    // collapsed into a swarm marker (skip as an individual dot)
     String  place;
+  };
+
+  // A collapsed swarm: centroid bearing/distance from home + the member count.
+  struct Cluster {
+    float distKm;
+    float bearingDeg;
+    int   count;
+    bool  anyFelt;
   };
 
   void begin();           // load record high-water from NVS
@@ -29,6 +38,7 @@ namespace seismic {
   time_t lastFetch();     // 0 if never
 
   const std::vector<Quake>& events();   // newest-first, capped
+  const std::vector<Cluster>& clusters();   // collapsed swarms (map markers)
   int  headlineIndex();                 // -1 if none
   int  count24h();
   int  count7d();

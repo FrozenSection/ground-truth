@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.4.1"   // hybrid headline (24h-significant, 7d fallback)
+#define FIRMWARE_VERSION "0.5.0"   // swarm clustering + double-ring headline
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -96,3 +96,9 @@
 // most-significant over the 7-day window (quiet days still show the biggest recent
 // event). The Geysers swarms make plain most-recent ≈ trivial. (seismic.cpp)
 #define HEADLINE_HYBRID  1
+
+// Swarm collapse (designer rule): a tight cluster of >= N events within R km
+// collapses to one "×n" map marker so a swarm (e.g. The Geysers) doesn't ink-blob.
+// The headline always breaks out as its own dot; the cluster counts the remainder.
+#define SWARM_MIN_COUNT   6
+#define SWARM_RADIUS_KM   15.0f

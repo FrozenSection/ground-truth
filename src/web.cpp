@@ -59,10 +59,14 @@ function render(d){
  const cx=100,cy=170,Ro=58;[58,47,34].forEach((r,i)=>add(el("circle",{cx,cy,r,fill:"none",stroke:"#000","stroke-dasharray":i?"1.5 3":"0"})));
  add(el("line",{x1:cx-6,y1:cy,x2:cx+6,y2:cy,stroke:"#000"}));add(el("line",{x1:cx,y1:cy-6,x2:cx,y2:cy+6,stroke:"#000"}));
  add(tx(cx,104,"N",{"font-size":9,"font-weight":700,"text-anchor":"middle"}));add(tx(133,221,d.loc.radiusKm+" km",{"font-size":8.5}));
- (d.events||[]).forEach(q=>{const r=Ro*Math.sqrt(Math.min(q.dk,d.loc.radiusKm)/d.loc.radiusKm),a=q.bd*Math.PI/180,x=cx+r*Math.sin(a),y=cy-r*Math.cos(a),rad=q.mag>=4?5:q.mag>=3?3.4:2.3;add(el("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:rad,fill:q.dep>=8?"#000":"none",stroke:"#000"}));if(q.head)add(el("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:rad+3.5,fill:"none",stroke:"#000","stroke-width":1.2}));});
+ const plot=(dk,bd)=>{const r=Ro*Math.sqrt(Math.min(dk,d.loc.radiusKm)/d.loc.radiusKm),a=bd*Math.PI/180;return [(cx+r*Math.sin(a)).toFixed(1),(cy-r*Math.cos(a)).toFixed(1)];};
+ (d.events||[]).forEach(q=>{if(q.head||q.cl)return;const [x,y]=plot(q.dk,q.bd),rad=q.mag>=4?5:q.mag>=3?3.4:2.3;add(el("circle",{cx:x,cy:y,r:rad,fill:q.dep>=8?"#000":"none",stroke:"#000"}));});
+ (d.clusters||[]).forEach(c=>{const [x,y]=plot(c.dk,c.bd);add(el("circle",{cx:x,cy:y,r:10,fill:"none",stroke:"#000","stroke-dasharray":"2 2.5"}));add(el("circle",{cx:x,cy:y,r:5,fill:"#000"}));add(tx(+x+10,+y-6,"×"+c.n,{"font-size":11,"font-weight":700}));});
+ {const hq=(d.events||[]).find(q=>q.head);if(hq){const [x,y]=plot(hq.dk,hq.bd);add(el("circle",{cx:x,cy:y,r:8.5,fill:"none",stroke:"#000"}));add(el("circle",{cx:x,cy:y,r:6,fill:"none",stroke:"#000"}));add(el("circle",{cx:x,cy:y,r:4,fill:"#000"}));}}
  const t=d.stats;
  add(tx(212,130,t.c24,{"font-size":38,"font-weight":700}));add(tx(250,116,"IN 24 H",{"font-size":9,"font-weight":700}));add(tx(250,130,t.felt24>0?`${t.felt24} felt nearby`:"none felt",{"font-size":11}));
- add(tx(212,180,t.c7+(t.capped?"+":""),{"font-size":38,"font-weight":700}));add(tx(262,166,"IN 7 DAYS",{"font-size":9,"font-weight":700}));add(tx(262,180,`M${t.magLo.toFixed(1)} – M${t.magHi.toFixed(1)}`,{"font-size":11}));
+ add(tx(212,180,t.c7+(t.capped?"+":""),{"font-size":38,"font-weight":700}));add(tx(262,166,"IN 7 DAYS",{"font-size":9,"font-weight":700}));
+ const mr=t.magLo.toFixed(1)===t.magHi.toFixed(1)?`M${t.magLo.toFixed(1)}`:`M${t.magLo.toFixed(1)} – M${t.magHi.toFixed(1)}`;add(tx(262,180,mr,{"font-size":11}));
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
  add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8 km",{"font-size":10}));
  add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8 km",{"font-size":10}));
@@ -236,6 +240,13 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
       o["bn"] = seismic::bearingName(q.bearingDeg);
       o["rel"] = timekeeper::relative(q.t);
       o["head"] = ((int)i == hi_idx);
+      o["cl"] = q.clustered;
+    }
+
+    JsonArray cls = doc["clusters"].to<JsonArray>();
+    for (const auto& c : seismic::clusters()) {
+      JsonObject o = cls.add<JsonObject>();
+      o["dk"] = c.distKm; o["bd"] = c.bearingDeg; o["n"] = c.count; o["felt"] = c.anyFelt;
     }
   }
 
