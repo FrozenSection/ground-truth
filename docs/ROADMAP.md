@@ -114,6 +114,37 @@ GPIO, `INPUT_PULLUP` → GND:
   carried over from the countdown build and stays sealed/clean). The partial-refresh
   redraw of the upper region *is* the acknowledgment that a press registered.
 
+### Locked from designer mockups (2026-06-13)
+Designer delivered Hero + SkyFooter as parametric components plus 3 variants per
+page, all system states, and a type spec. Chosen:
+- **Page 1 = Map variant B** (depth-coded dots, sparse big-numeral stats). Open
+  refinement: there's dead space right of the "24 h / 7 d" numerals — tighten it
+  (enlarge numerals + a short qualifier such as largest-mag to their right; pull the
+  depth legend + record up to balance). Avoid sliding back to variant A's full density.
+- **Page 2 = Timeline variant A** (magnitude lollipop strip chart). Beats B (filled
+  spikes blob at 1-bit) and C (daily columns lose within-day timing).
+- **√ (square-root) ring scale** on the map — 100 km lands at ~34 px instead of 19 px,
+  so near-home events (the ones that matter) get room. Good call; adopted.
+- **Footer approved**; **12/24-hour clock is a setting** (already `clock_24h` in the
+  NVS schema). The SkyFooter splits time + am/pm, so 24 h just blanks the suffix.
+- **System states approved** (boot splash, setup, stale, quiet/no-events, confirm-WiFi).
+  **Setup screen ADDS a WiFi QR** — port `ricmoo/QRCode` from countdown; encode
+  `WIFI:T:WPA;S:GroundTruth-Setup;P:<AP_PASS>;;` (works because the setup AP is WPA2
+  with a known password — scan joins it, captive portal then pops). Keep 192.168.4.1 +
+  auto-pop as the reliable fallback; don't over-promise a typed `setup.ground.truth`.
+- **Type = Public Sans** (open-licence, Helvetica metrics) — fontconvert one TTF at
+  the ~6 spec sizes (54/27/24–36/15/13/9–11). The 8.5 px micro-labels sit at the GFX
+  comfort floor; bump to 9–10 px if they read tight on the panel.
+- **Personalization:** the splash recipient line is PERSONAL DATA — loaded from
+  gitignored `include/personalization.h` (`RECIPIENT_SPLASH`), never committed; a
+  generic fallback ships in the repo. The designer's mockup HTML hardcodes the name,
+  so **scrub it before any repo inclusion**.
+- Open: depth-as-fill cue (Map B) loads a 3rd encoding onto each dot — tune the
+  shallow/deep threshold to NorCal (most crustal quakes <15 km) or treat as optional.
+
+Implementation maps cleanly to Gate 4: Hero/SkyFooter → display functions; moon
+terminator x-radius = R·|1−2·illum|, lit-right when waxing (from the SkyFooter logic).
+
 ## Network & security posture (decided 2026-06-13)
 Priority (Scott's framing): the device must **not be a liability on any network it
 joins** — especially the eventual **home** network — and that matters **more than

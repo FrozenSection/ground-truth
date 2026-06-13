@@ -18,6 +18,18 @@
 #define MDNS_HOSTNAME  "groundtruth"          // -> http://groundtruth.local
 #define WEB_PORT       80
 
+// ---- Recipient personalization (boot splash) ----
+// The recipient's name is PERSONAL DATA and must never be committed to this
+// public repo. Copy include/personalization.example.h -> include/personalization.h
+// (gitignored) and define RECIPIENT_SPLASH there. Absent that file, the splash
+// falls back to a generic tagline.
+#if __has_include("personalization.h")
+#include "personalization.h"
+#endif
+#ifndef RECIPIENT_SPLASH
+#define RECIPIENT_SPLASH "Live regional seismicity"
+#endif
+
 // ---- E-paper wiring (ESP32 Feather V2 + eInk Feather Friend) ----
 // CAREFUL: the Friend's silk/docs name Feather header POSITIONS (D9/D10/D6/D5),
 // which equal those GPIO numbers only on SAMD Feathers. On the ESP32 Feather V2

@@ -15,5 +15,8 @@ src/secrets.h
 secrets.h
 *.local.h
 
+# Recipient personalization (boot-splash name) — keep PII out of the public repo.
+include/personalization.h
+
 # OS
 .DS_Store
