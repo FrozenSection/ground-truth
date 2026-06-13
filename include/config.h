@@ -1,39 +1,74 @@
 #pragma once
-// Ground Truth — Seismic Desk Display · build-time configuration
-// Runtime-tunable settings (location, radius, etc.) move to NVS/Preferences
-// once Gate 1 lands; the DEFAULT_* values below seed that schema (charter §6).
+// Ground Truth — Seismic Desk Display · single source of truth for identity,
+// pins, network, and tuning. Change values here, not inside module .cpp files.
+// Runtime-tunable settings (location, radius, …) live in NVS; the DEFAULT_*
+// values below seed that schema.
 
 // ---- Firmware version (SemVer) ----
-// Bump PATCH on every flash during multi-flash debug sessions so the on-screen
-// version confirms the binary actually took (see memory: firmware-version-bumps).
-#define FIRMWARE_VERSION "0.1.0"   // Gate 0 — skeleton / hello frame
+// Bump PATCH on every flash during multi-flash debug so the boot banner / About
+// screen confirms the binary took. MINOR per gate/feature.
+#define FIRMWARE_VERSION "0.2.0"   // Gate 1 — connectivity + input
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
-#define AP_SSID        "GroundTruth-Setup"
-#define MDNS_HOST      "groundtruth"          // -> groundtruth.local
+#define AP_NAME        "GroundTruth-Setup"   // captive-portal SSID when unprovisioned
+#define AP_PASS        "groundtruth"          // WPA2 (>=8 chars) — printed on the card,
+                                              // so the setup AP isn't an open broadcast
+#define AP_IP_STR      "192.168.4.1"
+#define MDNS_HOSTNAME  "groundtruth"          // -> http://groundtruth.local
+#define WEB_PORT       80
 
-// ---- E-paper wiring (eInk Feather Friend + GDEY042T81) ----
-// Pin map proven on the sibling countdown build. RST/BUSY tied on the Friend,
-// so both are -1 (GxEPD2 falls back to timed waits instead of a BUSY line).
-#define EPD_CS    9
-#define EPD_DC    10
+// ---- E-paper wiring (ESP32 Feather V2 + eInk Feather Friend) ----
+// CAREFUL: the Friend's silk/docs name Feather header POSITIONS (D9/D10/D6/D5),
+// which equal those GPIO numbers only on SAMD Feathers. On the ESP32 Feather V2
+// the same positions carry DIFFERENT GPIOs. Map below is the one proven on the
+// sibling countdown build (see that repo's docs/pinmap.md) — do not "simplify"
+// back to 9/10. The Friend ties EPD RST to the Feather reset line; BUSY is
+// unwired unless hand-soldered, so it defaults to -1 (GxEPD2 uses timed waits).
+#define EPD_CS    15   // Friend ECS  (header position "D9")
+#define EPD_DC    33   // Friend DC   (header position "D10")
 #define EPD_RST   -1
-#define EPD_BUSY  -1
+#define EPD_BUSY  -1   // hand-wire the Friend BUSY pad to GPIO 27 (D11) for faster,
+                       // more reliable refresh — countdown did this; set 27 if wired.
+#define SRAM_CS   32   // Friend SRAM CS (position "D6") — unused; held HIGH
+#define SD_CS     14   // Friend SD  CS (position "D5") — unused; held HIGH
+// SCK/MOSI use hardware SPI defaults (GPIO 5 / 19).
 
-// ---- Config-schema defaults (charter §6) — wired up from Gate 1 on ----
-#define DEFAULT_LOC_MODE   "manual"   // ship pointed at Davis; auto IP-geo is the option,
-                                      // not the default (dorm/VPN geolocates badly).
+// ---- Smart button (single panel-mount momentary) ----
+// GPIO 26 (Feather A0 position) -> button -> GND, INPUT_PULLUP (pressed = LOW).
+// 26 is NOT a strapping pin (safe at boot). Tap = next view; hold = re-provision.
+#define BUTTON_PIN          26
+#define BUTTON_DEBOUNCE_MS  50
+#define BUTTON_HOLD_MS      3000   // hold >= this -> arm WiFi re-provision
+
+// ---- Views (tap cycles through these; selection persists in NVS) ----
+#define VIEW_MAP        0
+#define VIEW_TIMELINE   1
+#define VIEW_COUNT      2
+
+// ---- Connectivity supervision ----
+#define WIFI_CONNECT_TIMEOUT_MS  20000UL
+// Sustained offline beyond this (with the stored SSID absent / repeated failures)
+// re-opens the captive portal unattended — the "dorm move" recovery.
+#define AUTO_AP_AFTER_MS         (5UL * 60 * 1000)
+#define RECONNECT_EVERY_MS       30000UL
+#define TICK_INTERVAL_MS         1000UL
+
+// ---- Time ----
+#define NTP_SERVER_1   "pool.ntp.org"
+#define NTP_SERVER_2   "time.nist.gov"
+
+// ---- Config-schema defaults (NVS) — wired up from Gate 2 on ----
+#define DEFAULT_LOC_MODE   "manual"   // ship pointed at Davis; auto IP-geo is the option
 #define DEFAULT_LAT        38.5449f   // UC Davis
 #define DEFAULT_LON        -121.7405f
 #define DEFAULT_RADIUS_KM  300
 #define DEFAULT_MIN_MAG    2.5f
-#define DEFAULT_UNITS      "km"       // geology/USGS convention; depth is already km
+#define DEFAULT_UNITS      "km"       // geology/USGS convention; depth already km
 #define DEFAULT_CLOCK_24H  false
 #define DEFAULT_TZ         "PST8PDT,M3.2.0,M11.1.0"
 #define DEFAULT_POLL_MIN   10
 
-// ---- Headline rule (charter §10, decided) ----
-// Hero = most-significant event in the window, not most-recent: 300 km of Davis
-// includes The Geysers (constant tiny swarms), so most-recent ≈ always trivial.
+// Hero = most-significant event in the window (The Geysers swarms make
+// most-recent ≈ trivial). Decided in the roadmap.
 #define HEADLINE_MOST_SIGNIFICANT  1
