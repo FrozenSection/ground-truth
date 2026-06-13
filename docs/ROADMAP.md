@@ -22,10 +22,16 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       Also: smart-button driver (debounced GPIO, `INPUT_PULLUP` to GND) — tap vs
       ~3 s hold; hold arms re-provision via a **two-step discrete-frame confirm**
       (hold → static "Change WiFi?" frame → tap to confirm; no live countdown —
-      e-paper is too slow to animate one).
+      e-paper is too slow to animate one). **WPA2** on the `GroundTruth-Setup` AP
+      (not open); **show the WiFi MAC** on the setup screen + use the **stable factory
+      MAC** (for campus device registration). See Network & security posture below.
 - [ ] **Gate 2 — Seismic data.** HTTPS FDSN fetch, filtered ArduinoJson parse,
       haversine distance/bearing, headline selection. Serial-print only.
+      **Defensive parsing** (untrusted input): cap read size, don't trust
+      `Content-Length`, no unbounded `String`, fail gracefully on malformed JSON.
 - [ ] **Gate 3 — Time + astro.** NTP/TZ, sunrise/sunset, moon phase. Serial-verify.
+      **NTP primary + HTTP `Date:`-header fallback** (campus often blocks UDP 123,
+      and there's no RTC) — set the clock from the USGS HTTPS response header.
 - [ ] **Gate 4 — Display integration.** View system: full-screen pages with a
       **persistent sky footer**, tap-to-flip via the smart button, NVS-saved
       selection, `●○` page indicator. **Ship BOTH pages (map + timeline) — must be
@@ -35,10 +41,14 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       a full flash); periodic full refresh clears ghosting. Moon glyph, all required
       states. *(Layout possibly refined with family input once the companion
       countdown gift is in hand.)*
-- [ ] **Gate 5 — Web + OTA.** Status page, ElegantOTA `/update`, mDNS, Change-WiFi.
+- [ ] **Gate 5 — Web + OTA.** Status page, display mirror (`/api/state` JSON →
+      SVG twin), ElegantOTA `/update` with **basic auth** (the one security-critical
+      endpoint), mDNS, config/location editor, Change-WiFi. **Only ElegantOTA** as the
+      update path — no Arduino/espota (port 3232).
 - [ ] **Gate 6 — Gift hardening.** Failure-state polish, watchdog, button
       hold-to-reprovision guard test (accidental-brush safe), LA-override field
-      test, finalize defaults, version bump to 1.0.0.
+      test, **security pass** (no extra listeners, bounded handlers, authed-OTA
+      verified), 72 h soak, finalize defaults, version bump to 1.0.0.
 
 Commit per gate; tag at each gate boundary.
 
@@ -100,9 +110,43 @@ GPIO, `INPUT_PULLUP` → GND:
   actions = accidental-brush safe.
 - No hardware-reset button: the **watchdog** catches hangs and a **power-cycle** is
   the manual reset. (Drops the charter's EN-button backstop by decision.)
-- **Input ack on a laggy display:** optional onboard-LED/NeoPixel blink = "press
-  registered" (instant, unlike e-paper). Only useful if the sealed enclosure gets a
-  small light port — a CAD decision, flagged for the case model.
+- **Input ack on a laggy display:** **no LED** (decided 2026-06-13 — enclosure is
+  carried over from the countdown build and stays sealed/clean). The partial-refresh
+  redraw of the upper region *is* the acknowledgment that a press registered.
+
+## Network & security posture (decided 2026-06-13)
+Priority (Scott's framing): the device must **not be a liability on any network it
+joins** — especially the eventual **home** network — and that matters **more than
+locking down settings**. Keep day-to-day use **frictionless**.
+
+**Security (don't be exploitable):**
+- **OTA is the one security-critical endpoint** — `/update` flashes firmware, i.e.
+  remote code execution by design. **Basic-auth it** (creds on the recovery card).
+  This is a *security* control, not settings-access control.
+- **Only ElegantOTA** as the update path — do **not** also enable Arduino/espota OTA
+  (port 3232), an unauthenticated second flash path.
+- **Defensive parsing** of all untrusted network data (see Gate 2) — the real
+  embedded exploit surface.
+- **Minimal surface / no phone-home:** small sync WebServer only; no UPnP/NAT-PMP; no
+  telemetry; outbound only to USGS / NTP / IP-geo.
+- **WPA2 on the `GroundTruth-Setup` AP** (not an open broadcast during provisioning).
+- TLS `setInsecure()` OK for v1 — MITM can feed *wrong data* but can't take the
+  device over (display-only data into a bounded parser). Root-CA pin = optional later.
+- **Settings/config left open** (low-friction, low-stakes, auto-recoverable) per Scott
+  — worst case is griefing a value or a WiFi knock-off, not compromise. Destructive
+  actions (Change WiFi / Reboot) *may* share the OTA auth at near-zero friction —
+  optional.
+
+**School-network connectivity (likely first home is a UC Davis dorm):**
+- **Show the WiFi MAC** (setup screen + web) and use the **stable factory MAC** —
+  campus networks usually require device registration by MAC (ResNet-style).
+- **NTP-blocked fallback** → clock from the USGS HTTPS `Date:` header (Gate 3); no RTC.
+- **Work fully standalone** when client-isolation / blocked mDNS make the web UI
+  unreachable; **show the IP on-screen** as a `groundtruth.local` fallback. 2.4 GHz.
+- **OPEN RISK — WPA2-Enterprise / eduroam:** our portal collects a **PSK only**. If the
+  dorm offers no PSK "device/IoT/ResNet" network, enterprise (PEAP) support is extra
+  scope. **Action:** confirm UC Davis dorm IoT onboarding. **Hedge:** set up on home
+  WiFi first, then re-provision at the dorm via auto-AP.
 - **Pin caveat:** must be a *non-strapping* GPIO (avoid PICO GPIO0/2/12/15) so a
   pressed button at power-up can't change boot mode. I²C/analog pins are good
   candidates (I²C unused in v1). Firmware debounce; keep the lead sane re: EMI.
