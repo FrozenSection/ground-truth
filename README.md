@@ -40,3 +40,8 @@ Friend covers the onboard buttons.
 ## Status
 **Gate 0 — skeleton.** Builds; renders a hello frame; serial heartbeat. Application
 logic lands gate by gate (see roadmap).
+
+## Colophon
+Designed and built with **[Claude Code](https://www.anthropic.com/claude-code)** as
+a pair-programming collaborator — architecture, firmware, and display layout were
+developed conversationally, gate by gate.
