@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.2.0"   // Gate 1 — connectivity + input
+#define FIRMWARE_VERSION "0.3.0"   // Gate 2 — seismic data + web mirror
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

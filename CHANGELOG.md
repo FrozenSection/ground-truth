@@ -4,6 +4,21 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.3.0] — 2026-06-13 · Gate 2 (seismic data + web mirror) — compiles, field-test pending
+- **USGS FDSN** query (7-day window, limit-capped) over HTTPS; **filtered, streamed
+  ArduinoJson** parse (only the displayed fields); defensive against malformed input.
+- **Haversine distance + bearing** from home; **headline = most-significant** event;
+  aggregates: 24 h / 7 d counts, magnitude histogram, mag range, felt count.
+- **All-time record** high-water mark persisted in NVS.
+- **NTP time** (needed for recency/windows) + relative-time formatting; **moon phase**
+  computed on-device (location-independent; sunrise/sunset still Gate 3).
+- **`settings`** module: location/radius/min-mag/units/poll/tz from NVS (manual-Davis).
+- **Web mirror:** `AsyncWebServer` serving `/api/state` JSON and a live, 1-bit
+  **B-tight mirror page** at `groundtruth.local` (hero + √-scale map + stats + footer)
+  plus a status panel and a recent-events table. Auto-refreshes.
+- Flash the `headless` build to a bare Feather to see real data on the web page
+  before the panel arrives.
+
 ## [0.2.0] — 2026-06-13 · Gate 1 (connectivity + input) — compiles, field-test pending
 - **Pin-map fix:** corrected EPD pins to the real ESP32 Feather V2 GPIOs
   (CS=15, DC=33, SRAM_CS=32/SD_CS=14 held HIGH) — Gate 0 carried the SAMD
