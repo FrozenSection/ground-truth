@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.4.0"   // Gate 2/3 — settings page, OTA, sun
+#define FIRMWARE_VERSION "0.4.1"   // hybrid headline (24h-significant, 7d fallback)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -92,6 +92,7 @@
 #define DEFAULT_TZ         "PST8PDT,M3.2.0,M11.1.0"
 #define DEFAULT_POLL_MIN   10
 
-// Hero = most-significant event in the window (The Geysers swarms make
-// most-recent ≈ trivial). Decided in the roadmap.
-#define HEADLINE_MOST_SIGNIFICANT  1
+// Hero = HYBRID: most-significant in the last 24 h (fresh when active), else
+// most-significant over the 7-day window (quiet days still show the biggest recent
+// event). The Geysers swarms make plain most-recent ≈ trivial. (seismic.cpp)
+#define HEADLINE_HYBRID  1

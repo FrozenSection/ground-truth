@@ -57,15 +57,29 @@ namespace {
     return u;
   }
 
-  void selectHeadline() {
-    g_headline = -1;
-    int bestSig = -1; float bestMag = -100; time_t bestT = 0;
+  // Most-significant event with t >= cutoff (-1 if none). Tiebreak: sig, mag, recency.
+  int bestSignificant(time_t cutoff) {
+    int idx = -1, bestSig = -1; float bestMag = -100; time_t bestT = 0;
     for (size_t i = 0; i < g_events.size(); i++) {
       const auto& q = g_events[i];
+      if (q.t < cutoff) continue;
       bool better = q.sig > bestSig ||
                     (q.sig == bestSig && q.mag > bestMag) ||
                     (q.sig == bestSig && q.mag == bestMag && q.t > bestT);
-      if (better) { bestSig = q.sig; bestMag = q.mag; bestT = q.t; g_headline = (int)i; }
+      if (better) { bestSig = q.sig; bestMag = q.mag; bestT = q.t; idx = (int)i; }
+    }
+    return idx;
+  }
+
+  void selectHeadline() {
+    // Hybrid: most-significant in the last 24 h (keeps the hero fresh when there's
+    // recent activity), else most-significant over the whole 7-day window (so a
+    // quiet day still shows the region's biggest recent event rather than nothing).
+    if (timekeeper::synced()) {
+      g_headline = bestSignificant(timekeeper::now() - 86400L);
+      if (g_headline < 0) g_headline = bestSignificant(0);
+    } else {
+      g_headline = bestSignificant(0);
     }
   }
 
