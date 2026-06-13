@@ -6,6 +6,13 @@ of 2026-06-07. BOM largely arriving with the countdown order this week.
 This is the single living doc — gate progress, decisions, and the running feature
 list. We work conversationally from here rather than against a fixed spec.
 
+**Shipping constraint (decided 2026-06-13):** recipient is in CA, maker in VT — once
+handed off, **the maker has no access to the device.** So it must be
+**feature-complete and hardened before it leaves VT**; nothing is deferred to
+post-ship updates. **OTA is a recipient-operated break-glass valve only** (he runs
+it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" card
+(reach `groundtruth.local/update`, re-join WiFi via the AP).
+
 ## Build gates
 - [x] **Gate 0 — Skeleton.** PlatformIO builds + uploads; serial alive; GxEPD2
       renders a hello frame on the GDEY042T81. *(Build verified; upload pending
@@ -13,16 +20,21 @@ list. We work conversationally from here rather than against a fixed spec.
 - [ ] **Gate 1 — Connectivity + input.** Captive-portal provisioning, NVS-persisted
       params, auto-AP fallback (simulate dorm move), transient-vs-persistent tuning.
       Also: smart-button driver (debounced GPIO, `INPUT_PULLUP` to GND) — tap vs
-      ~3 s hold; hold triggers re-provision (with on-screen countdown guard).
+      ~3 s hold; hold arms re-provision via a **two-step discrete-frame confirm**
+      (hold → static "Change WiFi?" frame → tap to confirm; no live countdown —
+      e-paper is too slow to animate one).
 - [ ] **Gate 2 — Seismic data.** HTTPS FDSN fetch, filtered ArduinoJson parse,
       haversine distance/bearing, headline selection. Serial-print only.
 - [ ] **Gate 3 — Time + astro.** NTP/TZ, sunrise/sunset, moon phase. Serial-verify.
 - [ ] **Gate 4 — Display integration.** View system: full-screen pages with a
       **persistent sky footer**, tap-to-flip via the smart button, NVS-saved
-      selection, `●○` page indicator. Ship **Page 1 (map)** for the gift; Page 2
-      (timeline) + later pages ride in over OTA. Partial/full refresh, moon glyph,
-      all required states. *(Layout possibly refined with family input once the
-      companion countdown gift is in hand.)*
+      selection, `●○` page indicator. **Ship BOTH pages (map + timeline) — must be
+      feature-complete before shipment** (maker loses all access once it's in CA;
+      OTA is recipient-only break-glass, not a deployment channel). View swap =
+      **partial refresh of the upper region** (footer persists → ~0.5 s, faster than
+      a full flash); periodic full refresh clears ghosting. Moon glyph, all required
+      states. *(Layout possibly refined with family input once the companion
+      countdown gift is in hand.)*
 - [ ] **Gate 5 — Web + OTA.** Status page, ElegantOTA `/update`, mDNS, Change-WiFi.
 - [ ] **Gate 6 — Gift hardening.** Failure-state polish, watchdog, button
       hold-to-reprovision guard test (accidental-brush safe), LA-override field
@@ -69,18 +81,28 @@ Mockups compared two layout directions (both keep a big-magnitude hero + sky foo
 - **B — seismograph** (*when*): 7-day strip-chart, each quake a lollipop by
   magnitude; surfaces swarms well, but can read flat on a dead week. **Page 2.**
 
+**Both pages ship complete** (decided 2026-06-13) — recipient in CA, maker in VT
+with no remote access after handoff, so nothing is deferred to post-ship OTA.
+
 Rather than cram both into one panel, they are **full-screen pages** sharing a
 **persistent sky footer** (time/sun/moon always visible). A `●○` footer indicator
-shows there's more than one screen. Architecture is a view registry → easy to add a
-Page 3 later (recent-quakes list, or an astro page) over OTA.
+shows there's more than one screen. View swap is a **partial refresh of the upper
+region only** (footer untouched, ~0.5 s vs a ~1–2 s full flash). Architecture is a
+view registry → room for a Page 3 later (recent-quakes list / astro page).
 
 **Input — single smart button (no EN reset).** One Gebildet 7 mm momentary on a free
 GPIO, `INPUT_PULLUP` → GND:
 - **Tap** → next view (wraps; saved to NVS so it persists).
-- **Hold ~3 s** → re-provision / change WiFi, **with an on-screen "keep holding…"
-  countdown** that only fires on release past threshold (accidental-brush safe).
+- **Hold ~3 s → two-step discrete-frame confirm**, NOT a live countdown (e-paper is
+  too slow to animate one — full refresh ~1–2 s, partial ~0.3–0.5 s). Hold draws a
+  static "Change WiFi? Tap to confirm · ignore to cancel" frame; a confirming tap
+  wipes creds + reboots to portal, else it auto-cancels (~15 s). Two deliberate
+  actions = accidental-brush safe.
 - No hardware-reset button: the **watchdog** catches hangs and a **power-cycle** is
   the manual reset. (Drops the charter's EN-button backstop by decision.)
+- **Input ack on a laggy display:** optional onboard-LED/NeoPixel blink = "press
+  registered" (instant, unlike e-paper). Only useful if the sealed enclosure gets a
+  small light port — a CAD decision, flagged for the case model.
 - **Pin caveat:** must be a *non-strapping* GPIO (avoid PICO GPIO0/2/12/15) so a
   pressed button at power-up can't change boot mode. I²C/analog pins are good
   candidates (I²C unused in v1). Firmware debounce; keep the lead sane re: EMI.
