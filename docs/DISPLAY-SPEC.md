@@ -1,8 +1,14 @@
-# Ground Truth — Display Design Spec (for an independent designer)
+# Ground Truth — Display Design Spec
 
-A brief you can design against. **The constraints in §1 are hard** (they're the
-physical display); everything from §3 on is a *starting layout* — improve the
-aesthetics freely as long as §1 holds.
+**Status: decisions locked (2026-06-13).** This started as an open brief; after the
+mockup round it's now the **build spec**. The §1 constraints are still hard (physical
+display); §3–§8 record the *chosen* layouts, not options. Sections marked
+"⟶ remaining" are the only open items for the designer.
+
+> **Personalization / PII:** the boot-splash recipient line is personal data. It is
+> supplied at build time from a gitignored file (`include/personalization.h`) and
+> **never appears in this repo**. Any mockup file that hardcodes the recipient's name
+> must be scrubbed before it is committed here.
 
 ---
 
@@ -29,13 +35,25 @@ full-screen "pages"** the user flips with a single button, plus a few system sta
 | Ghosting | Faint residue after many partial refreshes; cleared by periodic full refresh | Don't rely on perfect blacks in a region that only ever partial-refreshes. |
 
 **Typography is bitmap, not vector.** Text is rendered with Adafruit GFX bitmap
-fonts. We can convert **any TTF** you choose to the sizes we need (we already did this
-for the sister project), so you may pick a typeface — but note:
-- No sub-pixel rendering. **Minimum comfortable size ≈ 11 px; body text ≥ 16 px.**
-- Each font + size + weight is baked into flash as a glyph table — so spec a small,
-  deliberate set (e.g. one sans in 3–4 sizes), not many.
-- A clean grotesque/neo-grotesque reads best at 1-bit (we default to a Helvetica/
-  Arial-like sans). Hairline or high-contrast serif faces fall apart — avoid.
+fonts converted from a TTF (fontconvert), one glyph table per size/weight baked into
+flash. No sub-pixel rendering.
+
+**Typeface (locked): Public Sans** — open-licence, Helvetica-class metrics, hinted
+for screens. One TTF, converted at this deliberate size scale:
+
+| Role | px | Weight |
+|---|---|---|
+| Magnitude (hero) | 54 | Bold |
+| Footer time | 27 | Bold |
+| Stat numerals (24 h / 7 d) | 36 | Bold |
+| Place | 15 | Bold |
+| Detail / recency / date | 13 | Regular |
+| Badge / caps labels | 9–11 | Bold |
+| Axis / map micro-labels | 9 | Reg/Medium |
+
+- **Comfort floor ≈ 9 px** (~1.9 mm at 120 ppi). The designer's 8.5 px micro-labels
+  get bumped to **9–10 px** on the panel; if a band is still tight, drop the least
+  important labels (day letters, histogram) before shrinking type further.
 
 **Deliver in black on white.** Ink = black, paper = white. (No "dark mode" — it's a
 physical white panel.)
@@ -74,92 +92,109 @@ Three cells split by 1 px verticals at **x=138** and **x=268**.
 | **Sun** | 146–268 | Small sun glyph + rise/set + daylight length | `↑ 5:48a` `↓ 8:21p` `14 h 33 m` |
 | **Moon** | 276–392 | Drawn moon disc (see §8) + phase name + % | `Waxing gibbous` `73% · day 10` |
 
-- 12/24-hour is configurable; design for both (`3:42 pm` and `15:42`).
+- **12/24-hour is a user setting** (`clock_24h` in NVS). Time and the am/pm suffix are
+  separate fields, so 24-hour mode just shows `15:42` and blanks the suffix — design
+  for both.
 - Daylight-length line is optional if space is tight.
+- **Footer is approved as drawn** (designer's `SkyFooter` component). Moon math in §8.
 
 ---
 
-## 4. Page 1 — "Map" (default) · spatial / *where*
+## 4. Page 1 — "Map" (default) · spatial / *where*  — **variant B-tight (locked)**
 
-Hero band (shared element pattern, see §6) + a **radial seismicity map** as content.
+Hero (§6) + a **radial seismicity map** (left) and a **sparse big-numeral stat
+column** (right), split by a 1 px vertical at **x=204**.
 
-**Content band (y 90–242), left ≈ map, right ≈ stats**, split by a 1 px vertical ~x=204.
+Radial map (left, center ~cx 100, cy 170):
+- **Three distance rings, √ (square-root) scale** — 100 / 200 / 300 km land at
+  **r ≈ 34 / 47 / 58 px**. (Linear buried near-home events at ~19 px; √ gives them
+  room. This is the chosen scale.) Outer ring solid; inner two dashed.
+- **N** label + center cross at the location; tiny `300 km` label on the outer ring.
+- **Each quake (last 7 days) = a dot** placed by true bearing + distance, **sized by
+  magnitude** (≈ 2 px M2 → 5 px M4+). Headline event gets a thin ring.
+- **Depth cue (kept, but tune):** hollow = shallow, filled = deep. Threshold **≈ 8 km**
+  (most NorCal crustal quakes are < 15 km; 10 km marked nearly everything "shallow").
+  This is the 3rd thing each dot encodes — if it reads muddy on the panel, it's the
+  first thing to drop.
 
-Radial map (left):
-- Davis at center (~cx 100, cy 172). **Three distance rings** at 100 / 200 / 300 km
-  (outer ring solid; inner two as light dashed). Outer ring radius ~58 px.
-- A small **N** label + center cross marking the location.
-- **Each quake (last 7 days) = a filled dot**, placed by true bearing + distance,
-  **sized by magnitude** (≈ 2 px for M2, 3.5 px M3, 5 px M4+). The headline event gets
-  a thin ring around it.
-- *Optional depth cue worth considering:* open (hollow) dot = shallow, filled = deep
-  — geologically meaningful, near-free. Designer's call whether it reads cleanly.
-- Tiny `300 km` label on the outer ring.
+Stat column (right, x 205–392) — **B-tight** (fills the dead space the earlier B left):
+- **`3`** big (36 px) = 24 h count, with a two-item descriptor to its right:
+  `IN 24 H` (caps label) over `1 felt nearby`.
+- **`18`** big (36 px) = 7 d count, descriptor `IN 7 DAYS` over the **magnitude range**
+  `M2.0 – M4.2`.
+- A 1 px divider, then the **depth key**: hollow ○ `shallow · <8 km`, filled ● `deep ·
+  ≥8 km`.
+- One line: **`REC M4.8 · MAY 3`** (all-time max since power-on, persisted in NVS).
 
-Stats (right):
-- `Last 24 h` / `Last 7 days` counts.
-- A small **magnitude histogram** (M2 / M3 / M4 bars with counts).
-- One line: `Record M4.8 · since May 3` (all-time max since power-on).
-
-Reference mock (proportions only — redesign welcome): see repo commit history /
-the conversation that produced this spec.
+*(No magnitude histogram — that was the denser variant A, not chosen.)* See the
+"B-tight" reference mock from the 2026-06-13 conversation for exact placement.
 
 ---
 
-## 5. Page 2 — "Timeline" · temporal / *when*
+## 5. Page 2 — "Timeline" · temporal / *when*  — **variant A: lollipop strip chart (locked)**
 
 Same hero + footer. Content band is a **7-day seismograph strip-chart**.
 
-- **Time axis** runs left→right across the last 7 days (day gridlines + day labels
-  along the bottom of the band).
-- **Magnitude axis** on the left (`M2 / M3 / M4`), with light dashed gridlines.
-- **Each quake = a vertical "lollipop"** rising from a baseline; **height = magnitude**,
-  topped by a dot sized by magnitude. Clusters naturally render as a picket fence
-  (this is how a *swarm* should read at a glance — a common local pattern).
-- Headline event = tallest stalk, ringed, with a small `M4.2` label.
-- One folded stats line under the chart: `Today 3 · largest 7 d M4.2 · record M4.8`.
+- **Time axis** left→right across the last 7 days; day letters (`S M T W T F S`) along
+  the baseline (~y 224).
+- **Magnitude axis** on the left (`M2 / M3 / M4` at ~y 205 / 167 / 129), light dashed
+  gridlines.
+- **Each quake = a vertical lollipop** from the baseline; **height = magnitude**,
+  topped by a dot sized by magnitude. Clusters render as a picket fence — this is how a
+  *swarm* reads at a glance (the common local pattern).
+- Headline event = tallest stalk, ringed, small `M4.2` label.
+- One folded stats line top-left: `TODAY 3 · 7-DAY MAX M4.2 · REC M4.8`.
 
-The intent: this page should evoke a **drum-recorder seismograph**. Its weak case is a
-genuinely quiet week (near-flat baseline) — design the empty/quiet read so it still
-looks intentional (see §7).
+Chosen over variant B (filled spikes blob/ghost at 1-bit) and C (daily columns lose
+within-day timing). Quiet-week read: see §7.
 
 ---
 
-## 6. Hero band — shared pattern (y 0–90)
+## 6. Hero band — shared pattern (y 0–90)  — **locked (`Hero` component)**
 
-The emotional anchor on both pages: the headline earthquake.
+The emotional anchor on both pages: the headline earthquake. Approved as the
+designer's parametric `Hero` component.
 
 | Element | Spec | Example | Notes |
 |---|---|---|---|
-| Magnitude | Very large (~50 px), bold, left | `M4.2` | The face of the device. |
-| Place | ~15 px bold, right of magnitude | `14 km NW of Winters, CA` | **Truncate/wrap** — USGS place strings run long (see §9). |
-| Detail line | ~13 px | `depth 8 km · 38 km SW` | distance + bearing from home. |
-| Recency | ~13 px | `3 hours ago` | |
-| Significance badge | small filled dot + word, top area | `● felt nearby` | Shown only when USGS `sig` high / `alert` non-null. |
+| Magnitude | **54 px** bold, left (x≈9) | `M4.2` | The face of the device. |
+| Place | 15 px bold, right column (x≈150) | `14 km NW of Winters, CA` | **2-line clamp** — USGS place strings run long (§9). |
+| Detail line | 13 px | `depth 8 km · 38 km SW` | distance + bearing from home. |
+| Recency | 13 px | `3 hours ago` | |
+| Significance badge | filled dot + caps word, **top-left** | `● FELT NEARBY` | only when USGS `sig` high / `alert` non-null. Doubles as the `STALE` flag. |
+| Page indicator | `● ○` top-right (x≈366–386, y≈13) | filled = current page | from the `Hero` component (`page` / `pages` props). |
 
 ---
 
-## 7. Required alternate states (please design these too)
+## 7. Alternate states — **approved as designed**, one change
 
-These are not edge cases — at least one shows whenever data is missing. They matter as
-much as the "happy path."
+All five system states from the mockups are approved. The **one addition: a WiFi QR on
+the Setup screen** (see below).
 
-| State | When | Must convey |
+| State | When | Conveys |
 |---|---|---|
-| **Boot splash** | first ~2 s after power | Project name + a personal line (recipient name + "UC Davis Geology"). *(Name supplied at build, not in this repo.)* |
-| **Setup needed** | no WiFi creds yet | "Join WiFi network **GroundTruth-Setup**" — large, calm, instructional. |
-| **Connecting / reconnecting** | WiFi dropping | Small status; keep the last good frame visible if there is one. |
-| **Stale data** | fetch failing, last data old | Keep last readout + a clear `stale · last update 2:10p` marker. |
-| **No events** (common!) | nothing meets filters | `Quiet — nearest M2.5+ is 410 km away`. **Design it to look intentional, reassuring — not like an error.** On Page 1 the rings still carry it. |
-| **Change WiFi? (confirm)** | after a 3 s button hold | A static prompt: `Change WiFi?  Tap to confirm · ignore to cancel`. (No countdown — the display can't animate one.) |
+| **Boot splash** | first ~2 s | Project name + personal line `‹name› · UC Davis Geology` + tagline. **Name comes from gitignored `personalization.h`, never the repo** (§0). |
+| **Setup needed** | no WiFi creds | "Join WiFi network **GroundTruth-Setup**", calm/instructional — **plus a WiFi QR** (new). |
+| **Connecting / reconnecting** | WiFi dropping | Small status; keep the last good frame if there is one. |
+| **Stale data** | fetch failing, data old | Keep last readout + filled `■ STALE DATA` stamp + `as of 2:10 pm`. |
+| **Quiet / no events** (common!) | nothing meets filters | Big `Quiet`, `Nearest M2.5+ is 410 km away`, rings still drawn with the distant event pinned just outside. Reads as the instrument at rest, not an error. |
+| **Change WiFi? (confirm)** | after a 3 s hold | Static `Change WiFi?` + current SSID + `■ Tap to confirm` / `□ Do nothing to cancel`. No animation. |
+
+**WiFi QR (Setup screen):** encode the join string
+`WIFI:T:WPA;S:GroundTruth-Setup;P:‹AP_PASS›;;` so scanning joins the WPA2 setup AP and
+the captive portal pops. Rendered on-device from `ricmoo/QRCode` (proven on the sister
+build). Keep `192.168.4.1` + auto-pop as the reliable fallback; don't rely on a typed
+`setup.ground.truth`.
 
 ---
 
 ## 8. Glyph construction notes (for faithful rendering)
 
 These are drawn with primitives, not image assets — design them as such:
-- **Moon:** a circle outline; the **illuminated fraction filled solid black**, with the
-  terminator as an elliptical arc (waxing = lit on the right). Phase name + % beside it.
+- **Moon:** circle outline; **illuminated fraction filled solid black**; terminator is
+  an elliptical arc with **x-radius = R·|1 − 2k|** (k = illuminated fraction), **lit on
+  the right when waxing**. (GFX has no arc-fill primitive, so firmware fills it by
+  scanline — a Gate-4 detail; the geometry is what the designer specs.)
 - **Sun (footer):** small circle + short radial tick "rays."
 - **Quake dots:** solid filled circles; magnitude → radius. Headline = add a thin ring.
 - **Arrows / bearings:** simple glyphs (`↑ ↓` for sun; compass `N`).
@@ -188,17 +223,19 @@ Keep line weights ≥ 1 px; thin diagonal hairlines alias badly at 1-bit.
 
 ---
 
-## 10. What we need back
+## 10. ⟶ Remaining for the designer
 
-- **1:1 black-on-white mockups at 400 × 300**, one per page **and** per state in §7
-  (boot, setup, stale, no-events, confirm). 1-bit PNG or vector with exact pixel
-  coords — either works; we translate to the device.
-- A **type spec**: typeface (single TTF we can embed), and the px size + weight for
-  each text role (magnitude / place / detail / labels / footer).
-- Notes on any glyph (moon/sun/dots) you redesign.
-- **Sanity-check legibility at true size** — print one at 100 % and read it from ~60 cm
-  (desk distance). If a label needs squinting, it's too small.
+The layouts are locked above. What's still needed:
 
-Design freedom is high *above the constraint line in §1*. We'd genuinely like
-independent thinking on the hero/stats balance, the map vs. the seismograph
-treatments, and the quiet-state designs.
+1. **Page 1 production render** incorporating **B-tight** (§4): bigger 36 px numerals
+   with the right-hand descriptors, depth key, record — i.e. fill the right column the
+   way the `B-tight` reference mock shows. Final 1:1 1-bit render.
+2. **Page 2 production render** of the chosen **lollipop variant A** (§5).
+3. **Setup screen** updated with the **WiFi QR** (§7).
+4. **Public Sans** TTF (the single file we embed) — confirm it's the licence/weight set
+   you want; we fontconvert from it.
+5. **Legibility pass at true size** — print one frame at 100 % and read from ~60 cm. The
+   9–10 px micro-labels are the risk; flag any that need bumping or dropping.
+
+Deliver 1-bit PNG or vector with exact pixel coords — either works; we translate to the
+device. (Glyph geometry for moon/sun/dots is in §8 if you revise them.)
