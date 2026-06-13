@@ -1,9 +1,16 @@
 #pragma once
 #include <Arduino.h>
 
-// STA-mode web server: a live mirror of the display fed by /api/state JSON, plus
-// status. (Config editing + ElegantOTA arrive at Gate 5.) Runs only once WiFi is
-// connected; the captive portal is a separate, earlier phase.
+// STA-mode web server:
+//   /          live B-tight display mirror + recent-events table  (the data)
+//   /settings  diagnostics, location/config editor, OTA, actions  (the admin)
+//   /api/state JSON consumed by both pages
+//   /update    ElegantOTA (basic-auth — the one security-critical endpoint)
 namespace web {
-  void begin();   // start the AsyncWebServer on :80 (idempotent)
+  void begin();           // start the AsyncWebServer on :80 (idempotent)
+  void loop();            // ElegantOTA housekeeping
+
+  // Actions requested from the web (consumed by the main loop, which owns reboot).
+  bool consumeReboot();
+  bool consumeWifiReset();
 }

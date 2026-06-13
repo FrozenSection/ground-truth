@@ -117,11 +117,17 @@ void loop() {
 
   pollButton();
 
-  if (g_wifiResetPending) {
+  if (g_wifiResetPending || web::consumeWifiReset()) {
     g_wifiResetPending = false;
     Serial.println(F("[main] WiFi reset -> clearing creds, rebooting to portal"));
     epd::message("WiFi reset", "rebooting to setup...");
     provisioning::forgetWiFi();
+    delay(400);
+    ESP.restart();
+  }
+  if (web::consumeReboot()) {
+    Serial.println(F("[main] reboot requested (settings/OTA)"));
+    epd::message("Rebooting", "applying settings...");
     delay(400);
     ESP.restart();
   }
@@ -148,6 +154,7 @@ void loop() {
     netUp   = true;
     netUpMs = nowMs;
   }
+  if (netUp) web::loop();   // ElegantOTA housekeeping
 
   // Reconnect supervision + auto-AP on a sustained move.
   if (online) { offlineSince = 0; reconnectTries = 0; }

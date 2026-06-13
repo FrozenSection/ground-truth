@@ -124,7 +124,8 @@ Stat column (right, x 205–392) — **B-tight** (fills the dead space the earli
   `M2.0 – M4.2`.
 - A 1 px divider, then the **depth key**: hollow ○ `shallow · <8 km`, filled ● `deep ·
   ≥8 km`.
-- One line: **`REC M4.8 · MAY 3`** (all-time max since power-on, persisted in NVS).
+- One line: **`Record  M4.8 · May 3`** (all-time max since power-on, persisted in NVS).
+  *(Spelled out — "REC" read as nebulous. "Record" fits the column at 9.5 px.)*
 
 *(No magnitude histogram — that was the denser variant A, not chosen.)* See the
 "B-tight" reference mock from the 2026-06-13 conversation for exact placement.

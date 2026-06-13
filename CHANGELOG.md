@@ -4,6 +4,19 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.4.0] — 2026-06-13 · Settings page, OTA, sunrise/sunset
+- **Web split:** `/` is now just the display mirror + recent-events table; a new
+  **`/settings`** page holds diagnostics (firmware, signal, IP/MAC, uptime, record),
+  a **location/behaviour editor** (lat/lon, radius, min-mag, units, poll, 12/24 h, TZ),
+  and **actions** (reboot, change WiFi). Frees the main page for the data.
+- **OTA:** ElegantOTA at `/update`, **basic-auth** (the one security-critical endpoint;
+  `OTA_PASSWORD` overridable via gitignored `personalization.h`).
+- **Sunrise/sunset:** NOAA sunrise equation computed on-device (no library — Dusk2Dawn
+  won't build under this toolchain). Footer now shows real `↑ rise / ↓ set / daylight`.
+- **Record** label spelled out (was "REC"); **badge** fix — "felt nearby" now requires
+  ≤50 km, else "felt" / "significant" / "alert".
+- Verified live against real USGS data on the Feather (`groundtruth.local`).
+
 ## [0.3.0] — 2026-06-13 · Gate 2 (seismic data + web mirror) — compiles, field-test pending
 - **USGS FDSN** query (7-day window, limit-capped) over HTTPS; **filtered, streamed
   ArduinoJson** parse (only the displayed fields); defensive against malformed input.

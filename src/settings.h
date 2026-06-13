@@ -18,6 +18,7 @@ namespace settings {
 
   void begin();
   const Config& get();
+  void update(const Config& c);   // write all fields to NVS + update the live copy
 
   float       toDisplayDist(float km);   // converts to the configured unit
   const char* distUnit();                // "km" or "mi"

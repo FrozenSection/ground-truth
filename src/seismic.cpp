@@ -212,8 +212,10 @@ const char* bearingName(float deg) {
 }
 
 String badge(const Quake& q) {
-  if (q.alert || q.felt > 0) return "felt nearby";
-  if (q.sig >= 600)          return "significant";
+  if (q.alert)                            return "alert";
+  if (q.felt > 0 && q.distKm <= 50)       return "felt nearby";
+  if (q.felt > 0)                         return "felt";
+  if (q.sig >= 600)                       return "significant";
   return "";
 }
 

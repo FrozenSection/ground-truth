@@ -29,6 +29,24 @@ void begin() {
 
 const Config& get() { return g; }
 
+void update(const Config& c) {
+  g = c;
+  if (g.pollMin < 1) g.pollMin = 1;
+  Preferences p;
+  p.begin("cfg", false);
+  p.putBool ("manual", g.locManual);
+  p.putFloat("lat",    g.lat);
+  p.putFloat("lon",    g.lon);
+  p.putInt  ("radius", g.radiusKm);
+  p.putFloat("minmag", g.minMag);
+  p.putBool ("km",     g.unitsKm);
+  p.putInt  ("poll",   g.pollMin);
+  p.putBool ("h24",    g.clock24h);
+  p.putString("tz",    g.tz);
+  p.end();
+  Serial.println(F("[cfg] settings updated"));
+}
+
 float toDisplayDist(float km) { return g.unitsKm ? km : km * 0.621371f; }
 const char* distUnit() { return g.unitsKm ? "km" : "mi"; }
 

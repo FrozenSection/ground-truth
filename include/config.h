@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.3.0"   // Gate 2 — seismic data + web mirror
+#define FIRMWARE_VERSION "0.4.0"   // Gate 2/3 — settings page, OTA, sun
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -28,6 +28,17 @@
 #endif
 #ifndef RECIPIENT_SPLASH
 #define RECIPIENT_SPLASH "Live regional seismicity"
+#endif
+
+// ---- OTA credentials (settings-page firmware update) ----
+// /update is the one security-critical endpoint (it flashes firmware) so it's
+// authenticated. Override OTA_PASSWORD in the gitignored personalization.h for the
+// gift build — the committed default is a weak placeholder, not a secret.
+#ifndef OTA_USERNAME
+#define OTA_USERNAME "admin"
+#endif
+#ifndef OTA_PASSWORD
+#define OTA_PASSWORD "groundtruth"
 #endif
 
 // ---- E-paper wiring (ESP32 Feather V2 + eInk Feather Friend) ----
