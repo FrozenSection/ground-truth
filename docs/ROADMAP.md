@@ -196,10 +196,15 @@ locking down settings**. Keep day-to-day use **frictionless**.
     SPI W5500 ("co-processor" = its built-in TCP/IP stack), on-board level-shifting +
     RJ45 link/act LEDs. **Breakout, not a stacked Wing** (cleaner with the eInk Friend's
     FPC; flexible RJ45 placement in the custom case). Shares SPI (SCK 5 / MOSI 19 /
-    MISO 21); **proposed control pins CS=GPIO4 (A5), INT=25 (A1), RST=27** — avoid EPD
-    15/33/32/14, button 26, strapping 0/2/12/15, input-only 34/36/39; keeps I²C (22/20)
-    free. Power the breakout from **5 V** (its own reg) to spare the 3.3 V rail. RJ45
-    enclosure cutout. *Bench-validate: SPI sharing + dual-stack default route.*
+    MISO 21); **proposed control pins CS=GPIO4 (A5), INT=25 (A1), RST=22 (SDA)** — avoid
+    EPD 15/33/32/14, **EPD BUSY 27** (hand-wired), button 26, strapping 0/2/12/15,
+    input-only 34/36/39 (SCL 20 stays free). Power the breakout from **5 V** (its own
+    reg) to spare the 3.3 V rail. RJ45 enclosure cutout. *Bench-validate: SPI sharing +
+    dual-stack default route.*
+
+  **Wiring done 2026-06-13:** EPD **BUSY → GPIO27** (D11 position, like countdown) and
+  the smart **button → GPIO26 (A0) ↔ GND** (`INPUT_PULLUP`). `EPD_BUSY` set to 27 in
+  config.h.
   Firmware/display work continues in parallel; the Ethernet bring-up waits on the board.
 - **Pin caveat:** must be a *non-strapping* GPIO (avoid PICO GPIO0/2/12/15) so a
   pressed button at power-up can't change boot mode. I²C/analog pins are good

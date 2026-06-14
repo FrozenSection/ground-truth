@@ -52,8 +52,10 @@
 #define EPD_CS    15   // Friend ECS  (header position "D9")
 #define EPD_DC    33   // Friend DC   (header position "D10")
 #define EPD_RST   -1
-#define EPD_BUSY  -1   // hand-wire the Friend BUSY pad to GPIO 27 (D11) for faster,
-                       // more reliable refresh — countdown did this; set 27 if wired.
+#define EPD_BUSY  27   // Friend BUSY pad hand-wired to the D11 header position (=GPIO27),
+                       // matching the countdown build (faster, more reliable refresh).
+                       // Set back to -1 if the wire is ever absent (GxEPD2 then uses
+                       // timed waits). NOTE: 27 is now taken — keep the W5500 off it.
 #define SRAM_CS   32   // Friend SRAM CS (position "D6") — unused; held HIGH
 #define SD_CS     14   // Friend SD  CS (position "D5") — unused; held HIGH
 // SCK/MOSI use hardware SPI defaults (GPIO 5 / 19).
