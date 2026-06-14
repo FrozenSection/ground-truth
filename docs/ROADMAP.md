@@ -173,10 +173,18 @@ locking down settings**. Keep day-to-day use **frictionless**.
 - **NTP-blocked fallback** → clock from the USGS HTTPS `Date:` header (Gate 3); no RTC.
 - **Work fully standalone** when client-isolation / blocked mDNS make the web UI
   unreachable; **show the IP on-screen** as a `groundtruth.local` fallback. 2.4 GHz.
-- **OPEN RISK — WPA2-Enterprise / eduroam:** our portal collects a **PSK only**. If the
-  dorm offers no PSK "device/IoT/ResNet" network, enterprise (PEAP) support is extra
-  scope. **Action:** confirm UC Davis dorm IoT onboarding. **Hedge:** set up on home
-  WiFi first, then re-provision at the dorm via auto-AP.
+- **CONFIRMED BLOCKER (2026-06-13) — UC Davis dorm WiFi is eduroam-only (802.1x).**
+  Per UC Davis Housing, gaming consoles / smart assistants / **IoT & smart-home devices
+  cannot use the WiFi** (no PSK/IoT SSID exists); the **sanctioned path is WIRED
+  Ethernet (ResNet) + MAC registration** (a jack in every bedroom). Our WiFi-only,
+  WPA2-Personal device **cannot join a dorm as built.**
+  **Decision pending — confirm where the device will actually live:**
+  - **Apartment / house / non-dorm** → normal WPA2; **works as-is, no change.**
+  - **Dorm** → either **(a) wired Ethernet** (add a W5500 FeatherWing + MAC register —
+    UCD-sanctioned, no password stored, but new hardware + RJ45 enclosure cutout), or
+    **(b) eduroam PEAP** (WiFi, no hardware, but stores his NetID password → annual
+    rotation breaks it; must be campus-tested). **Lean: wired if dorm.**
+  Firmware/display work is independent of this and continues in parallel.
 - **Pin caveat:** must be a *non-strapping* GPIO (avoid PICO GPIO0/2/12/15) so a
   pressed button at power-up can't change boot mode. I²C/analog pins are good
   candidates (I²C unused in v1). Firmware debounce; keep the lead sane re: EMI.
