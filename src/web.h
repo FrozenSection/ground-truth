@@ -13,4 +13,5 @@ namespace web {
   // Actions requested from the web (consumed by the main loop, which owns reboot).
   bool consumeReboot();
   bool consumeWifiReset();
+  bool consumeApplyConfig();   // settings saved -> re-apply TZ live + force a re-fetch
 }

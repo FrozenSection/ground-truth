@@ -19,5 +19,5 @@ namespace astro {
   struct Sun { bool valid; int riseMin, setMin; };
   Sun sun(float lat, float lon, time_t utc);
 
-  String hm12(int minutesPastMidnight);   // 312 -> "5:12a"
+  String hm12(int minutesPastMidnight, bool h24 = false);  // "5:12a" or "5:12"
 }

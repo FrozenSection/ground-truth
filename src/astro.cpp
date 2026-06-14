@@ -57,12 +57,13 @@ Sun sun(float lat, float lon, time_t utc) {
   return s;
 }
 
-String hm12(int m) {
+String hm12(int m, bool h24) {
   if (m < 0) return "--:--";
   int h = (m / 60) % 24, mn = m % 60;
+  char buf[10];
+  if (h24) { snprintf(buf, sizeof(buf), "%d:%02d", h, mn); return String(buf); }
   char suf = h < 12 ? 'a' : 'p';
   int h12 = h % 12; if (h12 == 0) h12 = 12;
-  char buf[10];
   snprintf(buf, sizeof(buf), "%d:%02d%c", h12, mn, suf);
   return String(buf);
 }

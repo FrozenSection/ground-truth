@@ -4,6 +4,19 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.6.0] — 2026-06-13 · Settings UX + footer labels (review feedback)
+- **"Record" → "Largest"** on the display and settings (clearer).
+- **Daylight duration labeled** in the footer (`13h 12m daylight`, was a bare interval).
+- **km everywhere** — dropped the miles option (rings + depth were always km, so the
+  Hero-only mile conversion was inconsistent). Units selector removed.
+- **24-hour setting now also applies to sunrise/sunset**, not just the clock.
+- **Settings page friendlier:** time zone is a **named US-zone dropdown** (no POSIX
+  string); a **place-name search** (OpenStreetMap/Nominatim) fills lat/lon for you,
+  while the fields stay editable.
+- **Save no longer stalls** — settings apply **live** (re-TZ + immediate re-fetch),
+  no reboot; the page shows "Saved ✓" and refreshes its data. (Reboot/Change-WiFi
+  buttons still restart, with clearer copy.)
+
 ## [0.5.0] — 2026-06-13 · Swarm clustering + double-ring headline (designer round 2)
 - **Swarm collapse:** ≥ 6 events within ~15 km collapse to one `×n` map marker
   (computed in firmware so the panel and web mirror share one source of truth); the

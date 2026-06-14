@@ -114,6 +114,7 @@ void loop() {
   static int           reconnectTries = 0;
   static unsigned long lastFetchMs  = 0;
   static bool          firstFetch   = false;
+  static bool          forceFetch   = false;
 
   pollButton();
 
@@ -156,6 +157,14 @@ void loop() {
   }
   if (netUp) web::loop();   // ElegantOTA housekeeping
 
+  // Settings saved from the web: re-apply TZ live and force an immediate re-fetch
+  // (no reboot — the page just refreshes).
+  if (web::consumeApplyConfig()) {
+    Serial.println(F("[main] settings saved -> re-apply TZ + re-fetch"));
+    timekeeper::begin(settings::get().tz);
+    forceFetch = true;
+  }
+
   // Reconnect supervision + auto-AP on a sustained move.
   if (online) { offlineSince = 0; reconnectTries = 0; }
   else {
@@ -186,9 +195,9 @@ void loop() {
   if (online && netUp) {
     bool timeReady = timekeeper::synced() || (nowMs - netUpMs > 45000UL);
     unsigned long pollMs = (unsigned long)settings::get().pollMin * 60000UL;
-    if (timeReady && (!firstFetch || nowMs - lastFetchMs >= pollMs)) {
+    if (timeReady && (!firstFetch || forceFetch || nowMs - lastFetchMs >= pollMs)) {
       if (seismic::fetch()) {
-        lastFetchMs = nowMs; firstFetch = true;
+        lastFetchMs = nowMs; firstFetch = true; forceFetch = false;
         printSummary();
         showHeadline();
       } else {

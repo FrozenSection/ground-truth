@@ -15,7 +15,7 @@
 namespace {
   AsyncWebServer server(WEB_PORT);
   bool g_started = false;
-  volatile bool g_reboot = false, g_wifiReset = false;
+  volatile bool g_reboot = false, g_wifiReset = false, g_applyConfig = false;
 
   // ---- main page: the 1-bit display mirror + recent events (the "data") ----
   const char PAGE_HTML[] PROGMEM = R"HTML(<!DOCTYPE html><html><head>
@@ -70,13 +70,13 @@ function render(d){
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
  add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8 km",{"font-size":10}));
  add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8 km",{"font-size":10}));
- if(t.recMag>0)add(tx(212,238,`Record  M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));
+ if(t.recMag>0)add(tx(212,238,`Largest  M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));
  add(el("line",{x1:0,y1:242,x2:400,y2:242,stroke:"#000"}));add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
  add(tx(16,271,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,271,d.time.ampm,{"font-size":12,"font-weight":600}));
  add(tx(16,291,d.time.date,{"font-size":12}));
  add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
  [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
- if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,d.sun.day,{"font-size":11}));}
+ if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,d.sun.day+" daylight",{"font-size":11}));}
  else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
  if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}
 }
@@ -114,16 +114,28 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 
 <h2>Location &amp; behavior</h2>
 <div class="card"><form id="cfg">
-  <label><input type="checkbox" id="manual"> Manual location (uncheck for IP-geo)</label>
+  <label>Find location by place name</label>
+  <div class="row"><div style="flex:3"><input id="place" type="text" placeholder="e.g. Davis, CA"></div>
+  <div style="flex:1"><button type="button" id="findbtn" style="width:100%;margin-top:0">Find</button></div></div>
+  <div style="font-size:12px;color:#666;margin-top:4px" id="geomsg">Fills the coordinates below — or type them in directly.</div>
   <div class="row"><div><label>Latitude</label><input id="lat" type="number" step="0.0001"></div>
   <div><label>Longitude</label><input id="lon" type="number" step="0.0001"></div></div>
   <div class="row"><div><label>Radius (km)</label><input id="radius" type="number"></div>
   <div><label>Min magnitude</label><input id="minmag" type="number" step="0.1"></div></div>
-  <div class="row"><div><label>Distance units</label><select id="units"><option value="km">km</option><option value="mi">mi</option></select></div>
-  <div><label>Poll interval (min)</label><input id="poll" type="number"></div></div>
-  <div class="row"><div><label>Clock</label><select id="clock"><option value="12">12-hour</option><option value="24">24-hour</option></select></div>
-  <div><label>POSIX timezone</label><input id="tz" type="text"></div></div>
-  <button type="submit">Save &amp; reboot</button><span class="msg" id="msg"></span>
+  <div class="row"><div><label>Poll interval (min)</label><input id="poll" type="number"></div>
+  <div><label>Clock</label><select id="clock"><option value="12">12-hour</option><option value="24">24-hour</option></select></div></div>
+  <label>Time zone</label>
+  <select id="tz">
+    <option value="PST8PDT,M3.2.0,M11.1.0">Pacific (PT)</option>
+    <option value="MST7MDT,M3.2.0,M11.1.0">Mountain (MT)</option>
+    <option value="MST7">Arizona (no DST)</option>
+    <option value="CST6CDT,M3.2.0,M11.1.0">Central (CT)</option>
+    <option value="EST5EDT,M3.2.0,M11.1.0">Eastern (ET)</option>
+    <option value="AKST9AKDT,M3.2.0,M11.1.0">Alaska (AKT)</option>
+    <option value="HST10">Hawaii (HT)</option>
+  </select>
+  <input type="hidden" id="manual" value="1">
+  <button type="submit">Save</button><span class="msg" id="msg"></span>
 </form></div>
 
 <h2>Firmware</h2>
@@ -139,22 +151,28 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 </div>
 <script>
 function f(id){return document.getElementById(id);}
-fetch("/api/state").then(r=>r.json()).then(d=>{
+function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
  const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
  f("diag").innerHTML=`<b>Firmware</b><span>v${d.fw}</span><b>Status</b><span>${d.online?"online":"offline"} · synced ${d.synced}</span>`+
   `<b>Signal</b><span>${d.rssi} dBm</span><b>IP</b><span>${d.ip}</span><b>MAC</b><span>${d.mac}</span>`+
   `<b>Host</b><span>${d.host}.local</span><b>Uptime</b><span>${up}</span>`+
-  `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Record</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
- const c=d.cfg;f("manual").checked=c.manual;f("lat").value=c.lat;f("lon").value=c.lon;f("radius").value=c.radiusKm;
- f("minmag").value=c.minMag;f("units").value=c.unitsKm?"km":"mi";f("poll").value=c.pollMin;f("clock").value=c.clock24h?"24":"12";f("tz").value=c.tz;
-});
+  `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Largest</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
+ const c=d.cfg;f("lat").value=c.lat;f("lon").value=c.lon;f("radius").value=c.radiusKm;
+ f("minmag").value=c.minMag;f("poll").value=c.pollMin;f("clock").value=c.clock24h?"24":"12";f("tz").value=c.tz;
+});}
+load();
+f("findbtn").addEventListener("click",()=>{const q=f("place").value.trim();if(!q)return;
+ f("geomsg").textContent="searching…";
+ fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q))
+  .then(r=>r.json()).then(a=>{if(a&&a.length){f("lat").value=(+a[0].lat).toFixed(4);f("lon").value=(+a[0].lon).toFixed(4);f("geomsg").textContent="Found: "+a[0].display_name.slice(0,56);}else f("geomsg").textContent="No match — try a city and state.";})
+  .catch(()=>f("geomsg").textContent="Search unavailable — enter coordinates manually.");});
 f("cfg").addEventListener("submit",e=>{e.preventDefault();
- const b=new URLSearchParams({manual:f("manual").checked?1:0,lat:f("lat").value,lon:f("lon").value,
-  radius:f("radius").value,minmag:f("minmag").value,units:f("units").value,poll:f("poll").value,
-  clock:f("clock").value,tz:f("tz").value});
- fetch("/api/config",{method:"POST",body:b}).then(()=>{f("msg").textContent="Saved — rebooting…";});
+ const b=new URLSearchParams({manual:"1",lat:f("lat").value,lon:f("lon").value,radius:f("radius").value,
+  minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value});
+ f("msg").textContent="Saving…";
+ fetch("/api/config",{method:"POST",body:b}).then(()=>{f("msg").textContent="Saved ✓ — applying & refreshing…";setTimeout(load,1600);setTimeout(()=>{f("msg").textContent="Saved ✓";},4200);});
 });
-function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Done — the device is restarting."));}
+function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Done — the device is restarting. This page is unreachable for ~10 s; reload it then."));}
 </script></body></html>)HTML";
 
   void buildState(JsonDocument& doc) {
@@ -192,8 +210,8 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
       astro::Sun s = astro::sun(c.lat, c.lon, n);
       if (s.valid) {
         JsonObject so = doc["sun"].to<JsonObject>();
-        so["rise"] = astro::hm12(s.riseMin);
-        so["set"]  = astro::hm12(s.setMin);
+        so["rise"] = astro::hm12(s.riseMin, c.clock24h);
+        so["set"]  = astro::hm12(s.setMin, c.clock24h);
         int dl = s.setMin - s.riseMin; if (dl < 0) dl += 1440;
         char b[12]; snprintf(b, sizeof(b), "%dh %02dm", dl / 60, dl % 60);
         so["day"] = b;
@@ -261,13 +279,12 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     v = ""; P("lon", v);    if (v.length()) c.lon = v.toFloat();
     v = ""; P("radius", v); if (v.length()) c.radiusKm = v.toInt();
     v = ""; P("minmag", v); if (v.length()) c.minMag = v.toFloat();
-    v = ""; P("units", v);  if (v.length()) c.unitsKm = (v == "km");
     v = ""; P("poll", v);   if (v.length()) c.pollMin = v.toInt();
     v = ""; P("clock", v);  if (v.length()) c.clock24h = (v == "24");
     v = ""; P("tz", v);     if (v.length()) c.tz = v;
     settings::update(c);
     req->send(200, "application/json", "{\"ok\":true}");
-    g_reboot = true;   // main loop reboots so TZ/location re-init cleanly
+    g_applyConfig = true;   // main loop re-applies TZ + forces a re-fetch (no reboot)
   }
 }  // namespace
 
@@ -303,7 +320,8 @@ void begin() {
 
 void loop() { ElegantOTA.loop(); }
 
-bool consumeReboot()    { if (g_reboot)    { g_reboot = false;    return true; } return false; }
-bool consumeWifiReset() { if (g_wifiReset) { g_wifiReset = false; return true; } return false; }
+bool consumeReboot()      { if (g_reboot)      { g_reboot = false;      return true; } return false; }
+bool consumeWifiReset()   { if (g_wifiReset)   { g_wifiReset = false;   return true; } return false; }
+bool consumeApplyConfig() { if (g_applyConfig) { g_applyConfig = false; return true; } return false; }
 
 }  // namespace web

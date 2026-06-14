@@ -21,6 +21,7 @@ void begin() {
   g.clock24h  = p.getBool ("h24",    DEFAULT_CLOCK_24H);
   g.tz        = p.getString("tz",    DEFAULT_TZ);
   p.end();
+  g.unitsKm = true;                 // km everywhere — miles dropped (rings/depth are km)
   if (g.pollMin < 1) g.pollMin = 1;
   Serial.printf("[cfg] lat=%.4f lon=%.4f radius=%d minMag=%.1f units=%s poll=%dm tz=%s\n",
                 g.lat, g.lon, g.radiusKm, g.minMag, g.unitsKm ? "km" : "mi",
@@ -31,6 +32,7 @@ const Config& get() { return g; }
 
 void update(const Config& c) {
   g = c;
+  g.unitsKm = true;                 // km everywhere
   if (g.pollMin < 1) g.pollMin = 1;
   Preferences p;
   p.begin("cfg", false);
