@@ -111,7 +111,10 @@ Radial map (left, center ~cx 100, cy 170):
 - **Three distance rings, √ (square-root) scale** — 100 / 200 / 300 km land at
   **r ≈ 34 / 47 / 58 px**. (Linear buried near-home events at ~19 px; √ gives them
   room. This is the chosen scale.) Outer ring solid; inner two dashed.
-- **N** label + center cross at the location; tiny `300 km` label on the outer ring.
+- **N** label + center cross at the location; ring labels are **radius-driven** (the
+  radius is user-configurable, default 300 km) — see §10.8 re: labeling the scale.
+- **Monitoring-location label** (e.g. `Davis, CA`) below/near the map — see §10.7
+  (must hold long names; distinct from the hero's event place).
 - **Each quake (last 7 days) = a dot** placed by true bearing + distance, **sized by
   magnitude** (≈ 2 px M2 → 5 px M4+).
 - **Headline = double ring** (r ≈ 8.5 + 6 outlines, r 4 filled center) — distinct from
@@ -185,7 +188,7 @@ flagged ⟵ NEW / ⟵ CHANGED below.
 | State | When | Conveys |
 |---|---|---|
 | **Boot splash** | first ~2 s | Project name + personal line `‹name› · UC Davis Geology` + tagline. **Name comes from gitignored `personalization.h`, never the repo** (§0). |
-| **Setup needed** | first setup, a bad password, or a deliberate WiFi change | "Join WiFi network **GroundTruth-Setup**" + the WiFi QR. **⟵ CHANGED: shown only for first setup / typo'd creds / an intentional re-provision — NOT automatically when WiFi merely drops** (that's now "Reconnecting"). |
+| **Setup needed** | first setup, a bad password, or a deliberate WiFi change | "Join WiFi network **GroundTruth-Setup**" + the WiFi QR + the **device MAC, prominent** (§10.9). **⟵ CHANGED: shown only for first setup / typo'd creds / an intentional re-provision — NOT automatically when WiFi merely drops** (that's now "Reconnecting"). **Note:** a **wired-Ethernet variant** of this screen is needed if we go wired (no AP/QR; Ethernet MAC + "register, then plug in") — §10.9. |
 | **Acquiring time** ⟵ **NEW** | clock not yet trustworthy (early boot, or NTP blocked before the first data fetch) | Footer replaced by a centered **`Setting clock…`**; hero keeps magnitude / place / distance but **no "X ago"**; the **24 h stat shows `—`**. Map, 7-day count, and "Largest" stay valid. Brief — clears once NTP or the HTTPS `Date` header lands. Needs a calm 1-bit treatment. |
 | **Connecting / reconnecting** | WiFi lost (router reboot, transient, or a move) | Keep the last good frame + a **small offline/`reconnecting` indicator**; the device retries STA indefinitely. **⟵ CHANGED: it never auto-opens the setup AP anymore** — so this is the long-lived state on any outage, and deserves a clear, non-alarming indicator on the normal frame. |
 | **Stale data** | fetch failing, data old | Keep last readout + filled `■ STALE DATA` stamp + `as of 2:10 pm`. |
@@ -258,6 +261,25 @@ from on-device review; please fold these into the final art:
    auto-opens the setup AP when WiFi drops; it holds the last frame and retries. So it
    wants a clear, non-alarming **offline / reconnecting indicator** on the normal frame,
    and the **Setup screen is now first-setup / bad-creds / deliberate-change only**.
+
+### New design requests for this round (Scott)
+7. **Show the monitoring location on screen** (e.g. below the map). It must hold names
+   longer than "Davis, CA" — the device can monitor **anywhere** (flexibility is the
+   point), so size for ~20–24 chars ("San Luis Obispo, CA"). **Make it visually distinct
+   from the hero's event place** — that line is the *quake's* location; this is *where
+   the device is watching* (e.g. a small home-pin glyph or a quiet labeled line). *Open
+   question:* keep it **Page-1-only** (under the map) or **persistent on both pages**
+   (it's page-independent context)? We lean persistent.
+8. **Map scale key.** The √-spaced rings aren't self-explanatory (only the outer is
+   labeled). Either label all three rings or add a tiny key — **drop it if it crowds the
+   map**. The ring distances are **radius-driven** (configurable), so the key reflects
+   the set radius (rings ≈ R⁄3 · 2R⁄3 · R), not a hard "300 km".
+9. **MAC address front-and-center on the Setup screen** — needed to register on a
+   managed/college network (UC Davis, etc.). **Caveat:** if we adopt the **wired
+   Ethernet** path (still TBD — see ROADMAP), the setup screen changes: **no WiFi AP /
+   QR** (it becomes "register this MAC, then plug in Ethernet"), and the MAC shown must
+   be the **Ethernet adapter's** MAC, not the WiFi MAC. **Please plan a wired-setup
+   variant** of the setup screen alongside the WiFi one.
 
 Everything else in §1–§9 is current. Still genuinely useful from you: the **Public Sans
 TTF** (the single file we embed) and a **true-size legibility pass** on the 9–10 px
