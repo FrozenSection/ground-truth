@@ -23,6 +23,9 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       WiFi **MAC** shown for campus registration; view-state in NVS. *(verified on a
       bare Feather via the `headless` env. The hold's two-step on-screen confirm UI
       lands with the Gate 4 display.)*
+- [ ] **Gate 1b — Ethernet (W5500), dual-connect *(needs the board)*.** Bring up W5500
+      over SPI (`ETH`); `online = WiFi || Ethernet`; expose both MACs; portal exits when
+      Ethernet links; unified Connect screen. See Network posture below.
 - [x] **Gate 2 — Seismic data.** HTTPS FDSN fetch, filtered/streamed ArduinoJson parse
       (defensive), haversine distance/bearing, **hybrid headline**, 24 h/7 d counts +
       histogram + range + felt, **swarm clustering** (≥6 within 15 km → `×n`), NVS
@@ -176,18 +179,20 @@ locking down settings**. Keep day-to-day use **frictionless**.
 - **NTP-blocked fallback** → clock from the USGS HTTPS `Date:` header (Gate 3); no RTC.
 - **Work fully standalone** when client-isolation / blocked mDNS make the web UI
   unreachable; **show the IP on-screen** as a `groundtruth.local` fallback. 2.4 GHz.
-- **CONFIRMED BLOCKER (2026-06-13) — UC Davis dorm WiFi is eduroam-only (802.1x).**
-  Per UC Davis Housing, gaming consoles / smart assistants / **IoT & smart-home devices
-  cannot use the WiFi** (no PSK/IoT SSID exists); the **sanctioned path is WIRED
-  Ethernet (ResNet) + MAC registration** (a jack in every bedroom). Our WiFi-only,
-  WPA2-Personal device **cannot join a dorm as built.**
-  **Decision pending — confirm where the device will actually live:**
-  - **Apartment / house / non-dorm** → normal WPA2; **works as-is, no change.**
-  - **Dorm** → either **(a) wired Ethernet** (add a W5500 FeatherWing + MAC register —
-    UCD-sanctioned, no password stored, but new hardware + RJ45 enclosure cutout), or
-    **(b) eduroam PEAP** (WiFi, no hardware, but stores his NetID password → annual
-    rotation breaks it; must be campus-tested). **Lean: wired if dorm.**
-  Firmware/display work is independent of this and continues in parallel.
+- **RESOLVED (2026-06-13) — go DUAL-CONNECTED: WiFi *and* wired Ethernet (W5500).**
+  Background: UC Davis dorm WiFi is **eduroam-only (802.1x)** — IoT/console devices
+  can't use it; the sanctioned path is **wired Ethernet (ResNet) + MAC registration**
+  (jack in every bedroom). Rather than choose, the device does **both**:
+  **home/apartment → WiFi; managed/dorm → Ethernet + MAC register.** No
+  WPA2-Enterprise/PEAP, no NetID password stored, works anywhere.
+  **New work this creates:**
+  - *Firmware:* bring up **W5500 over SPI** (arduino-esp32 `ETH`); `online = WiFi ||
+    Ethernet`; expose **both MACs**; the captive portal exits when Ethernet links; a
+    **unified Connect screen** (both paths + both MACs, no swap — DISPLAY-SPEC §10.9).
+  - *Hardware:* W5500 Ethernet board + **RJ45**, SPI **CS/INT/RST** on the shared bus
+    (must avoid the EPD pins 15/33/32/14), and an **RJ45 enclosure cutout**. *(Scott has
+    follow-up Q's on the jack/board — TBD.)*
+  Firmware/display work continues in parallel; the Ethernet bring-up waits on the board.
 - **Pin caveat:** must be a *non-strapping* GPIO (avoid PICO GPIO0/2/12/15) so a
   pressed button at power-up can't change boot mode. I²C/analog pins are good
   candidates (I²C unused in v1). Firmware debounce; keep the lead sane re: EMI.

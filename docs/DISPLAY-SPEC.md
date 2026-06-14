@@ -188,7 +188,7 @@ flagged ⟵ NEW / ⟵ CHANGED below.
 | State | When | Conveys |
 |---|---|---|
 | **Boot splash** | first ~2 s | Project name + personal line `‹name› · UC Davis Geology` + tagline. **Name comes from gitignored `personalization.h`, never the repo** (§0). |
-| **Setup needed** | first setup, a bad password, or a deliberate WiFi change | "Join WiFi network **GroundTruth-Setup**" + the WiFi QR + the **device MAC, prominent** (§10.9). **⟵ CHANGED: shown only for first setup / typo'd creds / an intentional re-provision — NOT automatically when WiFi merely drops** (that's now "Reconnecting"). **Note:** a **wired-Ethernet variant** of this screen is needed if we go wired (no AP/QR; Ethernet MAC + "register, then plug in") — §10.9. |
+| **Setup / Connect** ⟵ **CHANGED** | first setup, a bad password, or a deliberate WiFi change | **One unified screen, two paths:** (A) join WiFi **GroundTruth-Setup** + QR → pick network; or (B) **plug in Ethernet** (DHCP, no config). Lists **both MACs prominently** — `WiFi MAC` and `Ethernet MAC` — for managed/campus registration (§10.9). Device proceeds when *either* link comes up — **no screen swap when a cable is plugged** (the Ethernet MAC is known at boot regardless of cable). Shown only for first setup / bad creds / deliberate change — not on a transient drop (that's "Reconnecting"). |
 | **Acquiring time** ⟵ **NEW** | clock not yet trustworthy (early boot, or NTP blocked before the first data fetch) | Footer replaced by a centered **`Setting clock…`**; hero keeps magnitude / place / distance but **no "X ago"**; the **24 h stat shows `—`**. Map, 7-day count, and "Largest" stay valid. Brief — clears once NTP or the HTTPS `Date` header lands. Needs a calm 1-bit treatment. |
 | **Connecting / reconnecting** | WiFi lost (router reboot, transient, or a move) | Keep the last good frame + a **small offline/`reconnecting` indicator**; the device retries STA indefinitely. **⟵ CHANGED: it never auto-opens the setup AP anymore** — so this is the long-lived state on any outage, and deserves a clear, non-alarming indicator on the normal frame. |
 | **Stale data** | fetch failing, data old | Keep last readout + filled `■ STALE DATA` stamp + `as of 2:10 pm`. |
@@ -274,12 +274,18 @@ from on-device review; please fold these into the final art:
    labeled). Either label all three rings or add a tiny key — **drop it if it crowds the
    map**. The ring distances are **radius-driven** (configurable), so the key reflects
    the set radius (rings ≈ R⁄3 · 2R⁄3 · R), not a hard "300 km".
-9. **MAC address front-and-center on the Setup screen** — needed to register on a
-   managed/college network (UC Davis, etc.). **Caveat:** if we adopt the **wired
-   Ethernet** path (still TBD — see ROADMAP), the setup screen changes: **no WiFi AP /
-   QR** (it becomes "register this MAC, then plug in Ethernet"), and the MAC shown must
-   be the **Ethernet adapter's** MAC, not the WiFi MAC. **Please plan a wired-setup
-   variant** of the setup screen alongside the WiFi one.
+9. **Unified "Connect" setup screen showing BOTH MAC addresses.** Decision (2026-06-13):
+   the device is **dual-connected — WiFi *and* wired Ethernet (W5500)** — for max
+   flexibility without dorm-WiFi (eduroam) complexity: **home/apartment → WiFi; managed/
+   dorm → Ethernet + MAC registration**. Design **one** setup screen (no variants, no
+   mid-startup swap) that shows:
+   - the **WiFi path** — join `GroundTruth-Setup` + the QR, and
+   - the **Ethernet path** — "plug in Ethernet", and
+   - **both MACs listed** — `WiFi MAC` and `Ethernet MAC` (needed to register on UC
+     Davis / managed networks; both are known at boot, cable or not).
+   The device connects via whichever link comes up first. Size for **two 17-char MAC
+   rows + a QR** on 400×300. (Hardware: W5500 board + RJ45 — details TBD; doesn't change
+   the screen's content.)
 
 Everything else in §1–§9 is current. Still genuinely useful from you: the **Public Sans
 TTF** (the single file we embed) and a **true-size legibility pass** on the 9–10 px
