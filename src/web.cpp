@@ -30,6 +30,10 @@ h1{font-size:20px;margin:0}a{color:#1a5fb4;text-decoration:none;font-size:13px}
 .sub{color:#666;font-size:13px;margin:2px 0 0}
 .frame{height:478px}
 .panel{width:400px;height:300px;background:#fff;box-shadow:0 0 0 1px #b6b6b0,0 8px 22px rgba(0,0,0,.16);transform:scale(1.55);transform-origin:top left}
+.pager{display:flex;gap:8px;align-items:center;margin:4px 0 12px}
+.pg{font:inherit;font-size:13px;padding:.35rem .85rem;border:1px solid #b6b6b0;border-radius:7px;background:#ececea;color:#555;cursor:pointer}
+.pg.on{background:#333;color:#fff;border-color:#333}
+.dev{font-size:12px;color:#9a9a93;margin-left:4px}
 table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
 th,td{text-align:left;padding:5px 8px;border-bottom:1px solid #cfcfca}
 th{color:#9a9a93;font-weight:600;font-size:11px;text-transform:uppercase}
@@ -39,6 +43,7 @@ td.r,th.r{text-align:right}.muted{color:#9a9a93}
 <div class="top"><h1>Ground Truth <span id="ver" style="font-size:12px;color:#9a9a93;font-weight:400"></span></h1><a href="/settings">⚙ Settings</a></div>
 <div class="sub" id="sub">loading…</div>
 </div>
+<div class="pager"><button class="pg" id="pgMap">Map</button><button class="pg" id="pgTl">Timeline</button><span class="dev" id="devview"></span></div>
 <div class="frame"><svg id="panel" class="panel" viewBox="0 0 400 300"></svg></div>
 <h1 style="font-size:15px;margin-top:20px">Recent events</h1>
 <table><thead><tr><th>Mag</th><th>Place</th><th class="r">Dist</th><th class="r">Depth</th><th class="r">When</th></tr></thead><tbody id="rows"></tbody></table>
@@ -50,17 +55,30 @@ function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAt
 function tx(x,y,s,o){const e=el("text",Object.assign({x,y,fill:"#000","font-family":"Helvetica Neue,Arial"},o||{}));e.textContent=s;return e;}
 function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 function moon(cx,cy,R,k,w){const rx=R*Math.abs(1-2*k),t=`${cx} ${cy-R}`,b=`${cx} ${cy+R}`,l=w?1:0;let m;if(w)m=k<.5?0:1;else m=k<.5?1:0;return `M ${t} A ${R} ${R} 0 0 ${l} ${b} A ${rx} ${R} 0 0 ${m} ${t} Z`;}
-function render(d){
- const s=document.getElementById("panel");s.innerHTML="";const add=e=>s.appendChild(e);const h=d.headline;
+// ---- page selection (mirror-local; the device's own page is driven by its button) ----
+let curPage="Map",userPicked=false,lastData=null;
+function setPage(p){curPage=p;userPicked=true;updateTabs();if(lastData)render(lastData);}
+function updateTabs(){const m=document.getElementById("pgMap"),t=document.getElementById("pgTl"),dv=document.getElementById("devview");
+ if(m)m.classList.toggle("on",curPage==="Map");if(t)t.classList.toggle("on",curPage==="Timeline");
+ if(dv)dv.textContent=lastData?("● Device is showing: "+lastData.view):"";}
+document.getElementById("pgMap").addEventListener("click",()=>setPage("Map"));
+document.getElementById("pgTl").addEventListener("click",()=>setPage("Timeline"));
+
+// ---- shared hero (page dots reflect the page you're VIEWING and are clickable) ----
+function drawHero(add,d){const h=d.headline;
  if(h&&h.badge){add(el("circle",{cx:16,cy:13,r:4,fill:"#000"}));add(tx(25,17,h.badge.toUpperCase(),{"font-size":9,"font-weight":700,"letter-spacing":.6}));}
- for(let i=0;i<2;i++)add(el("circle",{cx:368+i*12,cy:13,r:3.5,fill:i===0?"#000":"#fff",stroke:"#000"}));
+ for(let i=0;i<2;i++){const p=i===0?"Map":"Timeline",dot=el("circle",{cx:368+i*12,cy:13,r:3.5,fill:p===curPage?"#000":"#fff",stroke:"#000"});dot.style.cursor="pointer";dot.addEventListener("click",()=>setPage(p));add(dot);}
  if(d.offline){const ox=346,oy=15;add(el("path",{d:`M ${ox-7} ${oy-3} q 7 -7 14 0 M ${ox-4} ${oy} q 4 -4 8 0`,fill:"none",stroke:"#000","stroke-width":1.1}));add(el("circle",{cx:ox,cy:oy+2,r:1.1,fill:"#000"}));add(el("line",{x1:ox-8,y1:oy-6,x2:ox+8,y2:oy+5,stroke:"#000","stroke-width":1.3}));}
  if(h){add(tx(9,66,h.mag,{"font-size":52,"font-weight":700,"letter-spacing":-2.5}));
   add(tx(150,32,esc(h.place),{"font-size":15,"font-weight":700}));
   add(tx(150,64,`depth ${h.depthKm} km · ${h.distDisp} ${h.unit} ${h.bearing}`,{"font-size":13}));
   add(tx(150,82,h.rel,{"font-size":13}));}
  else add(tx(9,60,"Quiet",{"font-size":42,"font-weight":700}));
- add(el("line",{x1:0,y1:90,x2:400,y2:90,stroke:"#000"}));add(el("line",{x1:204,y1:92,x2:204,y2:241,stroke:"#000"}));
+ add(el("line",{x1:0,y1:90,x2:400,y2:90,stroke:"#000"}));}
+
+// ---- Page 1: Map ----
+function drawMap(add,d){
+ add(el("line",{x1:204,y1:92,x2:204,y2:241,stroke:"#000"}));
  const cx=100,cy=170,Ro=58;[58,47,34].forEach((r,i)=>add(el("circle",{cx,cy,r,fill:"none",stroke:"#000","stroke-dasharray":i?"1.5 3":"0"})));
  add(el("line",{x1:cx-6,y1:cy,x2:cx+6,y2:cy,stroke:"#000"}));add(el("line",{x1:cx,y1:cy-6,x2:cx,y2:cy+6,stroke:"#000"}));
  add(tx(cx,104,"N",{"font-size":9,"font-weight":700,"text-anchor":"middle"}));add(tx(133,221,d.loc.radiusKm+" km",{"font-size":8.5}));
@@ -75,27 +93,44 @@ function render(d){
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
  add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8 km",{"font-size":10}));
  add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8 km",{"font-size":10}));
- if(t.recMag>0)add(tx(212,238,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));
+ if(t.recMag>0)add(tx(212,238,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));}
+
+// ---- Page 2: Timeline (7-day lollipop strip; mirrors src/display.cpp drawTimelinePanel) ----
+function drawTimeline(add,d){
+ const x0=22,x1=388,baseY=224,topY=124;
+ [[205,"M2"],[167,"M3"],[129,"M4"]].forEach(([gy,gl])=>{add(el("line",{x1:x0,y1:gy,x2:x1,y2:gy,stroke:"#000","stroke-dasharray":"1 3"}));add(tx(x0-4,gy+3,gl,{"font-size":9,"text-anchor":"end"}));});
+ add(el("line",{x1:x0,y1:baseY,x2:x1,y2:baseY,stroke:"#000"}));
+ const t=d.stats,mx=t.c7>0?("M"+t.magHi.toFixed(1)):"–",rec=t.recMag>0?("M"+t.recMag.toFixed(1)):"–";
+ add(tx(x0,112,`TODAY ${d.timeOK?t.c24:"–"}   7-DAY MAX ${mx}   LARGEST ${rec}`,{"font-size":9,"font-weight":700}));
+ if(!d.timeOK){add(tx(204,178,"Waiting for time sync…",{"font-size":13,"text-anchor":"middle",fill:"#555"}));return;}
+ const now=d.now,start=now-7*86400;
+ for(let dd=0;dd<7;dd++){const wx=x0+((dd+0.5)/7)*(x1-x0),c="SMTWTFS"[new Date((start+dd*86400)*1000).getDay()];add(tx(wx,baseY+14,c,{"font-size":9,"text-anchor":"middle"}));}
+ const magY=m=>{let y=205-38*(m-2);if(y>baseY-2)y=baseY-2;if(y<topY)y=topY;return y;};
+ (d.events||[]).forEach(q=>{if(q.t<start)return;const ex=x0+((q.t-start)/(7*86400))*(x1-x0),ey=magY(q.mag),rad=q.mag>=4?4:q.mag>=3?3:2;
+  add(el("line",{x1:ex,y1:baseY,x2:ex,y2:ey,stroke:"#000"}));add(el("circle",{cx:ex,cy:ey,r:rad,fill:"#000"}));
+  if(q.head){add(el("circle",{cx:ex,cy:ey,r:rad+2,fill:"none",stroke:"#000"}));add(tx(ex+6,ey+3,"M"+q.mag.toFixed(1),{"font-size":9}));}});}
+
+// ---- persistent footer (shared by both pages) ----
+function drawFooter(add,d){
  add(el("line",{x1:0,y1:242,x2:400,y2:242,stroke:"#000"}));
- if(!d.timeOK){
-  add(tx(200,276,"Waiting for time sync…",{"font-size":12,"text-anchor":"middle",fill:"#555"}));
- } else {
-  add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
-  add(tx(16,265,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,265,d.time.ampm,{"font-size":12,"font-weight":600}));
-  add(tx(16,280,d.time.date,{"font-size":11}));
-  // cell 1, line 3: home-pin + monitoring location (ellipsis-truncated to the cell)
-  add(el("path",{d:"M16 293 l4 -5 l4 5 M17 292 v3 h6 v-3",fill:"none",stroke:"#000","stroke-width":1}));
-  {let nm=(d.loc&&d.loc.name)||"";if(nm.length>20)nm=nm.slice(0,19)+"…";add(tx(27,295,nm,{"font-size":9.5,"font-weight":600}));}
-  add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
-  [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
-  if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
-  else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
-  if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}
- }
-}
+ if(!d.timeOK){add(tx(200,276,"Waiting for time sync…",{"font-size":12,"text-anchor":"middle",fill:"#555"}));return;}
+ add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
+ add(tx(16,265,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,265,d.time.ampm,{"font-size":12,"font-weight":600}));
+ add(tx(16,280,d.time.date,{"font-size":11}));
+ add(el("path",{d:"M16 293 l4 -5 l4 5 M17 292 v3 h6 v-3",fill:"none",stroke:"#000","stroke-width":1}));
+ {let nm=(d.loc&&d.loc.name)||"";if(nm.length>20)nm=nm.slice(0,19)+"…";add(tx(27,295,nm,{"font-size":9.5,"font-weight":600}));}
+ add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
+ [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
+ if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
+ else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
+ if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}}
+
+function render(d){const s=document.getElementById("panel");s.innerHTML="";const add=e=>s.appendChild(e);
+ drawHero(add,d);(curPage==="Timeline"?drawTimeline:drawMap)(add,d);drawFooter(add,d);}
 function tick(){fetch("/api/state").then(r=>r.json()).then(d=>{
  document.getElementById("ver").textContent="v"+d.fw;
  document.getElementById("sub").textContent=(d.online?"online":"offline")+" · "+d.host+".local · updated "+(d.fetch?d.fetch.rel:"never")+(d.timeOK?"":" · ⏳ syncing time");
+ lastData=d;if(!userPicked&&d.view)curPage=d.view;updateTabs();   // first load follows the device; then you browse freely
  render(d);const rows=document.getElementById("rows");rows.innerHTML="";
  (d.events||[]).slice(0,12).forEach(q=>{rows.innerHTML+=`<tr><td>M${q.mag.toFixed(1)}</td><td>${esc(q.pl)}</td><td class="r">${q.dd} ${d.loc.units} ${q.bn}</td><td class="r">${q.dep} km</td><td class="r muted">${q.rel}</td></tr>`;});
 }).catch(e=>{document.getElementById("sub").textContent="fetch error: "+e;});}
@@ -248,6 +283,7 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     doc["online"] = (WiFi.status() == WL_CONNECTED);
     doc["synced"] = timekeeper::synced();
     doc["uptime"] = (long)(millis() / 1000);
+    doc["now"]    = ok ? (long)timekeeper::now() : 0;   // device clock — anchors the timeline window
 
     JsonObject loc = doc["loc"].to<JsonObject>();
     loc["lat"] = c.lat; loc["lon"] = c.lon; loc["radiusKm"] = c.radiusKm;
@@ -320,6 +356,7 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
       const auto& q = evs[i];
       JsonObject o = arr.add<JsonObject>();
       o["mag"] = q.mag; o["dk"] = q.distKm; o["bd"] = q.bearingDeg;
+      o["t"] = (long)q.t;                              // epoch — timeline x-position
       o["dep"] = (int)round(q.depthKm); o["pl"] = q.place;
       o["dd"] = (int)round(settings::toDisplayDist(q.distKm));
       o["bn"] = seismic::bearingName(q.bearingDeg);

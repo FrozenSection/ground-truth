@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.8.3"   // settings: Enter in search = Find; keep geocode subtext in sync
+#define FIRMWARE_VERSION "0.8.4"   // web mirror: both pages (Map+Timeline) with a toggle
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

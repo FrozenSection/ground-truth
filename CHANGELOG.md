@@ -4,6 +4,19 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.4] — 2026-06-14 · Web mirror shows both pages
+- **The mirror can now show Page 2 (Timeline), not just the Map.** Added a **Map / Timeline
+  toggle** above the panel; the SVG renders whichever page you pick. It **defaults to the
+  page the device is currently showing** and displays a **"Device is showing: …"** note so
+  you always know the physical panel's state.
+- The toggle is **mirror-local** — browsing pages on the web does **not** change the
+  device (the panel's page stays driven by its button), so opening the mirror on a phone
+  won't flip what the recipient is looking at.
+- `/api/state` gained `now` (device clock) and per-event `t` (epoch) so the browser can
+  place the timeline lollipops on the same 7-day window the device uses. The mirror's
+  `render()` was refactored into shared hero/footer + per-page Map/Timeline draws, keeping
+  it a faithful twin of `src/display.cpp`.
+
 ## [0.8.3] — 2026-06-14 · Settings: Enter = Find, consistent geocode feedback
 - **Enter in the search box now runs Find**, not a silent Save. Previously the place box
   was inside the form, so Enter submitted (Save) — which moved the location but only
