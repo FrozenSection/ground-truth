@@ -55,6 +55,18 @@ for screens. One TTF, converted at this deliberate size scale:
   get bumped to **9–10 px** on the panel; if a band is still tight, drop the least
   important labels (day letters, histogram) before shrinking type further.
 
+**Legibility pass — accepted (designer, shape/spacing) with `fontconvert` guidance:**
+- At **9 px use Medium, not Regular** — keeps stems ≥ 1 device pixel on the 1-bit raster.
+- Keep **+0.5–1 px tracking** on caps labels.
+- Watch the `·` (mid-dot) and `<` glyphs at 9 px; **fallback: swap the mid-dot for a
+  spaced hyphen** if it drops out on the panel.
+- Font set is **Bold / Regular / Medium** (in `assets/fonts/PublicSans/`). The pass used
+  **SemiBold** for the Quiet caption + location — map those to **Bold** / **Medium**
+  respectively (or add `PublicSans-SemiBold.ttf` if we want the exact weight).
+- **Not final:** that sheet is a browser (anti-aliased) render — the real check is
+  fontconvert → render on the GDEY042T81 → read at ~60 cm. **On-panel re-shoot is a
+  Gate 4 task (needs hardware).**
+
 **Deliver in black on white.** Ink = black, paper = white. (No "dark mode" — it's a
 physical white panel.)
 
