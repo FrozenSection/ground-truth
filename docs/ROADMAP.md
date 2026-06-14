@@ -1,9 +1,12 @@
 # Ground Truth — Build Roadmap
 
-Status (**v0.6.1**, 2026-06-13): **Gates 0–3 + 5 substantially done on a bare Feather
-(verified live against real USGS data); Gate 4 — the e-paper panel layouts — is the
-remaining big piece, gated on hardware.** Target: built and gifted within ~2 weeks of
-2026-06-07.
+Status (**v0.7.0**, 2026-06-13): **Gates 0–3 + 5 done, and the display now
+hardware-verified on the real GDEY042T81** — the panel renders, BUSY (→GPIO27) and the
+button (→GPIO26) are confirmed, and the quiet / headline / location-change / geocode
+paths all work live. **Gate 4 — porting the locked B-tight/Timeline frames to GxEPD2 —
+is the next build** (the panel currently shows interim text frames). Then **Gate 1b**
+(W5500 Ethernet, board pending) and the **Gate 6 tail** (watchdog, soak, recovery card).
+Target: built and gifted within ~2 weeks of 2026-06-07.
 
 This is the single living doc — gate progress, decisions, and the running feature
 list. We work conversationally from here rather than against a fixed spec.
@@ -16,7 +19,9 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
 (reach `groundtruth.local/update`, re-join WiFi via the AP).
 
 ## Build gates
-- [x] **Gate 0 — Skeleton.** PlatformIO builds; GxEPD2 driver class wired. *(tagged `gate-0`)*
+- [x] **Gate 0 — Skeleton.** PlatformIO builds; GxEPD2 driver class wired; **display
+      hardware-verified on the real GDEY042T81 (2026-06-13)** — renders crisp, correct
+      orientation, BUSY→27 + button→26 confirmed. *(tagged `gate-0`)*
 - [x] **Gate 1 — Connectivity + input.** WPA2 captive portal (ported from countdown/
       AirBox), NVS params, **auto-AP fallback**, transient-vs-persistent reconnect;
       smart-button driver (GPIO 26, tap = next view / hold ≈ 3 s = re-provision);
