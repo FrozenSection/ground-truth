@@ -131,7 +131,10 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
   <label>Find location by place name</label>
   <div class="row"><div style="flex:3"><input id="place" type="text" placeholder="e.g. Davis, CA"></div>
   <div style="flex:1"><button type="button" id="findbtn" style="width:100%;margin-top:0">Find</button></div></div>
-  <div style="font-size:12px;color:#666;margin-top:4px" id="geomsg">Fills the coordinates below — or type them in directly.</div>
+  <div style="font-size:12px;color:#666;margin-top:4px" id="geomsg">Saving looks this up and sets the coordinates — or type them in directly below.</div>
+  <label>Display label (shown on the device)</label>
+  <input id="label" type="text" placeholder="e.g. Davis, CA" maxlength="48">
+  <div style="font-size:12px;color:#666;margin-top:4px">Auto-filled from the search — edit it to anything you like (e.g. “Home”).</div>
   <div class="row"><div><label>Latitude</label><input id="lat" type="number" step="0.0001"></div>
   <div><label>Longitude</label><input id="lon" type="number" step="0.0001"></div></div>
   <div class="row"><div><label>Radius (km)</label><input id="radius" type="number"></div>
@@ -165,6 +168,28 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 </div>
 <script>
 function f(id){return document.getElementById(id);}
+let lastGeo={q:"",lat:null,lon:null,name:""};   // last successfully resolved search
+let labelAuto=true;                              // is #label still an auto-derived value?
+f("label").addEventListener("input",()=>{labelAuto=false;});
+
+// Build a clean "Town, ST" label from a Nominatim addressdetails result.
+function shortName(r){const a=r.address||{};
+ const town=a.city||a.town||a.village||a.hamlet||a.suburb||a.municipality||a.county||r.name||"";
+ let region="";const iso=a["ISO3166-2-lvl4"]||a["ISO3166-2-lvl6"]||"";
+ if(iso&&iso.indexOf("-")>=0)region=iso.split("-")[1];
+ if(!region)region=a.state||a.country||"";
+ return region?(town+", "+region):town;}
+
+// Geocode a query -> {lat,lon,name,full}. Rejects "no match" / network error.
+function geocode(q){return fetch("https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q="+encodeURIComponent(q))
+ .then(r=>r.json()).then(a=>{if(!a||!a.length)return Promise.reject("no match");const r0=a[0];
+  return {lat:+(+r0.lat).toFixed(4),lon:+(+r0.lon).toFixed(4),name:shortName(r0),full:r0.display_name};});}
+
+// Apply a geocode result to the form: coords always; label only if still auto/empty.
+function applyGeo(g){f("lat").value=g.lat;f("lon").value=g.lon;
+ if(labelAuto||!f("label").value.trim()){f("label").value=g.name;labelAuto=true;}
+ lastGeo={q:f("place").value.trim(),lat:g.lat,lon:g.lon,name:g.name};}
+
 function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
  const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
  f("diag").innerHTML=`<b>Firmware</b><span>v${d.fw}</span><b>Status</b><span>${d.online?"online":"offline"} · synced ${d.synced}</span>`+
@@ -173,21 +198,31 @@ function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
   `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Largest</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
  const c=d.cfg;f("lat").value=c.lat;f("lon").value=c.lon;f("radius").value=c.radiusKm;
  f("minmag").value=c.minMag;f("poll").value=c.pollMin;f("clock").value=c.clock24h?"24":"12";f("tz").value=c.tz;
- f("place").value=c.name||"";
+ f("place").value=c.name||"";f("label").value=c.name||"";labelAuto=true;
+ // Stored coords already correspond to the stored label — seed lastGeo so a save that
+ // only tweaks radius/etc doesn't needlessly re-geocode or move the pin.
+ lastGeo={q:(c.name||"").trim(),lat:+c.lat,lon:+c.lon,name:c.name||""};
 });}
 load();
 f("findbtn").addEventListener("click",()=>{const q=f("place").value.trim();if(!q)return;
  f("geomsg").textContent="searching…";
- fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q))
-  .then(r=>r.json()).then(a=>{if(a&&a.length){f("lat").value=(+a[0].lat).toFixed(4);f("lon").value=(+a[0].lon).toFixed(4);f("geomsg").textContent="Found: "+a[0].display_name.slice(0,56);}else f("geomsg").textContent="No match — try a city and state.";})
-  .catch(()=>f("geomsg").textContent="Search unavailable — enter coordinates manually.");});
+ geocode(q).then(g=>{applyGeo(g);f("geomsg").textContent="Found: "+g.full.slice(0,60);})
+  .catch(err=>{f("geomsg").textContent=(err==="no match")?"No match — try a city and state.":"Search unavailable — enter coordinates manually.";});});
 f("cfg").addEventListener("submit",e=>{e.preventDefault();
- const b=new URLSearchParams({manual:"1",lat:f("lat").value,lon:f("lon").value,radius:f("radius").value,
-  minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value,name:f("place").value.trim()});
- f("msg").textContent="Saving…";
- fetch("/api/config",{method:"POST",body:b}).then(r=>r.ok?r.text():r.text().then(t=>Promise.reject(t)))
-  .then(()=>{f("msg").textContent="Saved ✓ — applying & refreshing…";setTimeout(load,1600);setTimeout(()=>{f("msg").textContent="Saved ✓";},4200);})
-  .catch(e=>{f("msg").style.color="#a3301f";f("msg").textContent="Rejected: "+e;});
+ const place=f("place").value.trim();
+ f("msg").style.color="#1a7f37";f("msg").textContent="Saving…";
+ // Couple search -> save: if the place text changed since the last resolve, geocode NOW
+ // so the saved coordinates always match the label (no silent drift).
+ const prep=(place&&place!==lastGeo.q)?geocode(place).then(applyGeo):Promise.resolve();
+ prep.then(()=>{
+  const label=f("label").value.trim();
+  const name=label||(place?lastGeo.name:"");   // editable label wins; else verified name; else blank -> device shows lat,lon
+  const b=new URLSearchParams({manual:"1",lat:f("lat").value,lon:f("lon").value,radius:f("radius").value,
+   minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value,name:name});
+  return fetch("/api/config",{method:"POST",body:b}).then(r=>r.ok?r.text():r.text().then(t=>Promise.reject(t)));
+ })
+ .then(()=>{f("msg").textContent="Saved ✓ — applying & refreshing…";setTimeout(load,1600);setTimeout(()=>{f("msg").textContent="Saved ✓";},4200);})
+ .catch(err=>{f("msg").style.color="#a3301f";f("msg").textContent=(err==="no match")?("Couldn't find “"+place+"” — check the spelling or enter coordinates."):("Rejected: "+err);});
 });
 function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Done — the device is restarting. This page is unreachable for ~10 s; reload it then."));}
 </script></body></html>)HTML";

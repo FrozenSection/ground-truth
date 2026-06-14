@@ -4,6 +4,19 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.2] — 2026-06-14 · Settings: couple geocode to Save; editable verified label
+- **Search and Save are now coupled.** Previously the place box was just a label saved as
+  text — you could type "davis", Save, and the footer label changed while the coordinates
+  never moved. Now **Save geocodes the place** (if it changed since the last resolve),
+  sets lat/lon to match, and only then writes — so the label can never drift from where
+  the device is actually watching. A failed lookup (typo / no match) **refuses to save**
+  with a clear message instead of keeping stale coordinates. "Find" is now an optional
+  preview.
+- **Editable, verified location label.** A new **Display label** field auto-fills a clean
+  "Town, ST" name derived from the geocode (via Nominatim `addressdetails` +
+  `ISO3166-2-lvl4`), and you can override it (e.g. "Home"). A custom label is preserved
+  across further searches; the device footer + `/api/state.loc.name` show it.
+
 ## [0.8.1] — 2026-06-14 · Fix: false "Quiet" after boot
 - **Re-fetch the instant the clock becomes trustworthy.** The first USGS fetch can run
   before the clock is synced (it bootstraps time from the HTTPS `Date:` header). That
