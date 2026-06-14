@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.6.0"   // settings UX: km-only, TZ picker, geocode, live-apply
+#define FIRMWARE_VERSION "0.6.1"   // web header (version + sticky), label tweaks
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

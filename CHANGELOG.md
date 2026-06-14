@@ -4,6 +4,11 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.6.1] — 2026-06-13 · Web header + label polish
+- **Firmware version shown** next to "Ground Truth" in the main page header (dev aid).
+- **Header is now sticky** — the title + Settings link stay put when scrolling.
+- Labels: **"Largest:"** (colon) and **"Daylight:"** moved in front of the duration.
+
 ## [0.6.0] — 2026-06-13 · Settings UX + footer labels (review feedback)
 - **"Record" → "Largest"** on the display and settings (clearer).
 - **Daylight duration labeled** in the footer (`13h 12m daylight`, was a bare interval).

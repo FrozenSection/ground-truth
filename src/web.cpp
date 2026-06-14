@@ -22,10 +22,11 @@ namespace {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ground Truth</title><style>
 :root{font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a}
-body{margin:0;background:#d7d7d5;padding:24px}.wrap{max-width:680px;margin:0 auto}
+body{margin:0;background:#d7d7d5;padding:0 24px 24px}.wrap{max-width:680px;margin:0 auto}
+.hdr{position:sticky;top:0;background:#d7d7d5;padding:20px 0 10px;z-index:5}
 .top{display:flex;justify-content:space-between;align-items:baseline}
 h1{font-size:20px;margin:0}a{color:#1a5fb4;text-decoration:none;font-size:13px}
-.sub{color:#666;font-size:13px;margin:2px 0 16px}
+.sub{color:#666;font-size:13px;margin:2px 0 0}
 .frame{height:478px}
 .panel{width:400px;height:300px;background:#fff;box-shadow:0 0 0 1px #b6b6b0,0 8px 22px rgba(0,0,0,.16);transform:scale(1.55);transform-origin:top left}
 table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
@@ -33,8 +34,10 @@ th,td{text-align:left;padding:5px 8px;border-bottom:1px solid #cfcfca}
 th{color:#9a9a93;font-weight:600;font-size:11px;text-transform:uppercase}
 td.r,th.r{text-align:right}.muted{color:#9a9a93}
 </style></head><body><div class="wrap">
-<div class="top"><h1>Ground Truth</h1><a href="/settings">⚙ Settings</a></div>
+<div class="hdr">
+<div class="top"><h1>Ground Truth <span id="ver" style="font-size:12px;color:#9a9a93;font-weight:400"></span></h1><a href="/settings">⚙ Settings</a></div>
 <div class="sub" id="sub">loading…</div>
+</div>
 <div class="frame"><svg id="panel" class="panel" viewBox="0 0 400 300"></svg></div>
 <h1 style="font-size:15px;margin-top:20px">Recent events</h1>
 <table><thead><tr><th>Mag</th><th>Place</th><th class="r">Dist</th><th class="r">Depth</th><th class="r">When</th></tr></thead><tbody id="rows"></tbody></table>
@@ -70,17 +73,18 @@ function render(d){
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
  add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8 km",{"font-size":10}));
  add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8 km",{"font-size":10}));
- if(t.recMag>0)add(tx(212,238,`Largest  M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));
+ if(t.recMag>0)add(tx(212,238,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));
  add(el("line",{x1:0,y1:242,x2:400,y2:242,stroke:"#000"}));add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
  add(tx(16,271,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,271,d.time.ampm,{"font-size":12,"font-weight":600}));
  add(tx(16,291,d.time.date,{"font-size":12}));
  add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
  [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
- if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,d.sun.day+" daylight",{"font-size":11}));}
+ if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
  else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
  if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}
 }
 function tick(){fetch("/api/state").then(r=>r.json()).then(d=>{
+ document.getElementById("ver").textContent="v"+d.fw;
  document.getElementById("sub").textContent=(d.online?"online":"offline")+" · "+d.host+".local · updated "+(d.fetch?d.fetch.rel:"never");
  render(d);const rows=document.getElementById("rows");rows.innerHTML="";
  (d.events||[]).slice(0,12).forEach(q=>{rows.innerHTML+=`<tr><td>M${q.mag.toFixed(1)}</td><td>${esc(q.pl)}</td><td class="r">${q.dd} ${d.loc.units} ${q.bn}</td><td class="r">${q.dep} km</td><td class="r muted">${q.rel}</td></tr>`;});

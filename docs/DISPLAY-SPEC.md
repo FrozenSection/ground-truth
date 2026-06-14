@@ -94,7 +94,7 @@ Three cells split by 1 px verticals at **x=138** and **x=268**.
 
 - **12/24-hour is a user setting** (`clock_24h` in NVS) and applies to **both the clock
   and the sunrise/sunset times** (`15:42`, `↑ 5:48 / ↓ 20:33` in 24-hour mode).
-- The third sun line is the **daylight duration, labeled** — `13h 12m daylight` (not a
+- The third sun line is the **daylight duration, labeled** — `Daylight: 13h 12m` (not a
   bare interval). Optional if space is tight.
 - **Distance is km everywhere** (miles dropped — the rings and depth are km, so a mixed
   unit lost consistency).
@@ -132,8 +132,8 @@ Stat column (right, x 205–392) — **B-tight** (fills the dead space the earli
   `1 felt nearby` → `none felt` when none).
 - A 1 px divider, then the **depth key**: hollow ○ `shallow · <8 km`, filled ● `deep ·
   ≥8 km`.
-- One line: **`Largest  M4.8 · May 3`** (all-time max since power-on, persisted in NVS).
-  *(Labeled "Largest", not "Record" — clearer.)*
+- One line: **`Largest: M4.8 · May 3`** (all-time max since power-on, persisted in NVS).
+  *(Labeled "Largest:", not "Record" — clearer.)*
   *(Spelled out — "REC" read as nebulous. "Record" fits the column at 9.5 px.)*
 
 *(No magnitude histogram — that was the denser variant A, not chosen.)* See the
