@@ -1,7 +1,9 @@
 # Ground Truth — Build Roadmap
 
-Status: **Gate 0 complete (scaffold)**. Target: built and gifted within ~2 weeks
-of 2026-06-07. BOM largely arriving with the countdown order this week.
+Status (**v0.6.1**, 2026-06-13): **Gates 0–3 + 5 substantially done on a bare Feather
+(verified live against real USGS data); Gate 4 — the e-paper panel layouts — is the
+remaining big piece, gated on hardware.** Target: built and gifted within ~2 weeks of
+2026-06-07.
 
 This is the single living doc — gate progress, decisions, and the running feature
 list. We work conversationally from here rather than against a fixed spec.
@@ -14,43 +16,37 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
 (reach `groundtruth.local/update`, re-join WiFi via the AP).
 
 ## Build gates
-- [x] **Gate 0 — Skeleton.** PlatformIO builds + uploads; serial alive; GxEPD2
-      renders a hello frame on the GDEY042T81. *(Build verified; upload pending
-      hardware.)*
-- [ ] **Gate 1 — Connectivity + input.** Captive-portal provisioning, NVS-persisted
-      params, auto-AP fallback (simulate dorm move), transient-vs-persistent tuning.
-      Also: smart-button driver (debounced GPIO, `INPUT_PULLUP` to GND) — tap vs
-      ~3 s hold; hold arms re-provision via a **two-step discrete-frame confirm**
-      (hold → static "Change WiFi?" frame → tap to confirm; no live countdown —
-      e-paper is too slow to animate one). **WPA2** on the `GroundTruth-Setup` AP
-      (not open); **show the WiFi MAC** on the setup screen + use the **stable factory
-      MAC** (for campus device registration). See Network & security posture below.
-- [ ] **Gate 2 — Seismic data.** HTTPS FDSN fetch, filtered ArduinoJson parse,
-      haversine distance/bearing, headline selection. Serial-print only.
-      **Defensive parsing** (untrusted input): cap read size, don't trust
-      `Content-Length`, no unbounded `String`, fail gracefully on malformed JSON.
-- [ ] **Gate 3 — Time + astro.** NTP/TZ, sunrise/sunset, moon phase. Serial-verify.
-      **NTP primary + HTTP `Date:`-header fallback** (campus often blocks UDP 123,
-      and there's no RTC) — set the clock from the USGS HTTPS response header.
-- [ ] **Gate 4 — Display integration.** View system: full-screen pages with a
-      **persistent sky footer**, tap-to-flip via the smart button, NVS-saved
-      selection, `●○` page indicator. **Ship BOTH pages (map + timeline) — must be
-      feature-complete before shipment** (maker loses all access once it's in CA;
-      OTA is recipient-only break-glass, not a deployment channel). View swap =
-      **partial refresh of the upper region** (footer persists → ~0.5 s, faster than
-      a full flash); periodic full refresh clears ghosting. Moon glyph, all required
-      states. *(Layout possibly refined with family input once the companion
-      countdown gift is in hand.)*
-- [ ] **Gate 5 — Web + OTA.** Status page, display mirror (`/api/state` JSON →
-      SVG twin), ElegantOTA `/update` with **basic auth** (the one security-critical
-      endpoint), mDNS, config/location editor, Change-WiFi. **Only ElegantOTA** as the
-      update path — no Arduino/espota (port 3232).
-- [ ] **Gate 6 — Gift hardening.** Failure-state polish, watchdog, button
-      hold-to-reprovision guard test (accidental-brush safe), LA-override field
-      test, **security pass** (no extra listeners, bounded handlers, authed-OTA
-      verified), 72 h soak, finalize defaults, version bump to 1.0.0.
+- [x] **Gate 0 — Skeleton.** PlatformIO builds; GxEPD2 driver class wired. *(tagged `gate-0`)*
+- [x] **Gate 1 — Connectivity + input.** WPA2 captive portal (ported from countdown/
+      AirBox), NVS params, **auto-AP fallback**, transient-vs-persistent reconnect;
+      smart-button driver (GPIO 26, tap = next view / hold ≈ 3 s = re-provision);
+      WiFi **MAC** shown for campus registration; view-state in NVS. *(verified on a
+      bare Feather via the `headless` env. The hold's two-step on-screen confirm UI
+      lands with the Gate 4 display.)*
+- [x] **Gate 2 — Seismic data.** HTTPS FDSN fetch, filtered/streamed ArduinoJson parse
+      (defensive), haversine distance/bearing, **hybrid headline**, 24 h/7 d counts +
+      histogram + range + felt, **swarm clustering** (≥6 within 15 km → `×n`), NVS
+      all-time **largest**. *(live-verified against real USGS data.)*
+- [x] **Gate 3 — Time + astro.** NTP/TZ, **on-device NOAA** sunrise/sunset, moon phase
+      (12/24 h honored). **Leftover:** HTTP `Date:`-header NTP fallback (campus blocks
+      UDP 123, no RTC) — not yet implemented.
+- [ ] **Gate 4 — Display integration *(the remaining big piece — needs the panel)*.**
+      Port the locked layouts to GxEPD2: **B-tight Map** + **lollipop Timeline** + all
+      states (incl. the WiFi **QR**), the view system (full-screen pages, persistent
+      sky footer, `●○` indicator, tap-to-flip via partial refresh), moon/sun glyphs.
+      **Both pages ship complete** (maker loses access in CA). The web mirror is the
+      pixel reference.
+- [x] **Gate 5 — Web + OTA.** `/` display mirror (`/api/state` JSON → SVG twin),
+      `/settings` diagnostics + **location/behaviour editor** (named-TZ dropdown,
+      place-name geocode, live-apply no-reboot), **ElegantOTA `/update` with basic
+      auth** (only update path; no espota), mDNS, Reboot / Change-WiFi. *(km-only,
+      sticky header, version badge added per review.)*
+- [ ] **Gate 6 — Gift hardening.** Watchdog, button hold-confirm guard test, distant-
+      override field test, **security pass**, 72 h soak, recovery card, finalize
+      defaults, → 1.0.0.
 
-Commit per gate; tag at each gate boundary.
+Commit per gate. (Gates landed somewhat out of order — web/OTA came early to preview
+real data; only Gate 4 and the Gate 3 leftover remain before hardening.)
 
 ## Stack decision (delta from charter)
 Charter §3 specs **WiFiManager**. We are instead **porting the proven hand-rolled
@@ -68,18 +64,20 @@ layout). They are decisions, not maybes — carried forward intentionally.
    option. Dorm/university/VPN networks geolocate to a datacenter/wrong city.
    *Also:* resolve location once and cache in NVS — the device is stationary, don't
    re-geo every poll. → Gate 1/2. *(seeded in `config.h` DEFAULT_LOC_MODE="manual")*
-2. **Headline = most-significant-in-window, not most-recent.** The Geysers field
-   inside 300 km produces constant tiny swarms, so most-recent ≈ always trivial.
-   → Gate 2. *(seeded: `HEADLINE_MOST_SIGNIFICANT`)*
+2. **Headline = HYBRID** — most-significant in the last 24 h, else most-significant
+   over 7 d. Real data showed plain 7-d-significant could pin a 6-day-old hero; the
+   24 h-first rule keeps it fresh. → **DONE** (`HEADLINE_HYBRID` in config.h).
 3. **Liveness on quiet days:** rolling 7-day quake count so the "no events" state
    still feels alive. → Gate 2/4.
 4. **Personal high-water mark in NVS:** "Largest since setup: M4.8 · May 3." → Gate 2/4.
 5. **Personalization splash** (recipient name + "UC Davis Geology"). Keep the name
    in an **uncommitted** config for the public repo (see audit below). → Gate 4/6.
-6. **Distance units default km** (geology/USGS convention; depth already km). → Gate 2/4.
-   *(seeded: `config.h` DEFAULT_UNITS="km")*
+6. **km everywhere** — the miles option was dropped entirely (rings + depth are km, so
+   a Hero-only mile conversion was inconsistent). → **DONE**.
 7. **Switchable views via a smart button** (decided 2026-06-13). See design note below.
-   → Gate 1 (button) + Gate 4 (multi-view render).
+   → Gate 1 button **DONE**; Gate 4 multi-view render pending.
+8. **All-time "Largest" + swarm `×n` collapse + double-ring headline** (from real data /
+   designer round 2). → **DONE** in firmware; render on panel at Gate 4.
 
 Scope held to charter §1: no weather/river-gauge/Kp/GPS/RTC/color in v1.
 
@@ -117,16 +115,17 @@ GPIO, `INPUT_PULLUP` → GND:
 ### Locked from designer mockups (2026-06-13)
 Designer delivered Hero + SkyFooter as parametric components plus 3 variants per
 page, all system states, and a type spec. Chosen:
-- **Page 1 = Map variant B** (depth-coded dots, sparse big-numeral stats). Open
-  refinement: there's dead space right of the "24 h / 7 d" numerals — tighten it
-  (enlarge numerals + a short qualifier such as largest-mag to their right; pull the
-  depth legend + record up to balance). Avoid sliding back to variant A's full density.
+- **Page 1 = Map "B-tight"** (depth-coded dots; the 24 h / 7 d numerals filled out with
+  right-hand descriptors). Designer delivered production renders (round 2, 2026-06-13)
+  adding a **double-ring headline** + **swarm `×n` collapse** — both now in firmware.
+  Labels since refined to **"Largest:"** and **"Daylight:"**; km-only.
 - **Page 2 = Timeline variant A** (magnitude lollipop strip chart). Beats B (filled
   spikes blob at 1-bit) and C (daily columns lose within-day timing).
 - **√ (square-root) ring scale** on the map — 100 km lands at ~34 px instead of 19 px,
   so near-home events (the ones that matter) get room. Good call; adopted.
-- **Footer approved**; **12/24-hour clock is a setting** (already `clock_24h` in the
-  NVS schema). The SkyFooter splits time + am/pm, so 24 h just blanks the suffix.
+- **Footer approved**; **12/24-hour clock is a setting** (`clock_24h`) that applies to
+  **both the clock and the sunrise/sunset times**. The third sun line is labeled
+  **"Daylight: …"**. The SkyFooter splits time + am/pm, so 24 h just blanks the suffix.
 - **System states approved** (boot splash, setup, stale, quiet/no-events, confirm-WiFi).
   **Setup screen ADDS a WiFi QR** — port `ricmoo/QRCode` from countdown; encode
   `WIFI:T:WPA;S:GroundTruth-Setup;P:<AP_PASS>;;` (works because the setup AP is WPA2

@@ -153,7 +153,7 @@ Same hero + footer. Content band is a **7-day seismograph strip-chart**.
   topped by a dot sized by magnitude. Clusters render as a picket fence — this is how a
   *swarm* reads at a glance (the common local pattern).
 - Headline event = tallest stalk, ringed, small `M4.2` label.
-- One folded stats line top-left: `TODAY 3 · 7-DAY MAX M4.2 · REC M4.8`.
+- One folded stats line top-left: `TODAY 3 · 7-DAY MAX M4.2 · LARGEST M4.8`.
 
 Chosen over variant B (filled spikes blob/ghost at 1-bit) and C (daily columns lose
 within-day timing). Quiet-week read: see §7.
@@ -226,26 +226,29 @@ Keep line weights ≥ 1 px; thin diagonal hairlines alias badly at 1-bit.
 | mag histogram | counts by band | M2:11 M3:5 M4:2 | bars scale to widest. |
 | record | float + date | `M4.8 · May 3` | persists across reboots. |
 | time / date | local | `3:42 pm` / `Sat · Jun 13` | 12/24h configurable. |
-| sunrise / sunset | local time | `5:48a` / `8:21p` | |
-| daylight length | duration | `14 h 33 m` | optional. |
+| sunrise / sunset | local time | `5:48a` / `8:21p` | follows the 12/24 h setting. |
+| daylight length | duration | `Daylight: 13h 12m` | labeled; optional if tight. |
 | moon phase | name + % + age | `Waxing gibbous` `73% · day 10` | 8 phase names. |
 | active page | 1…N | indicator dots | filled = current. |
 
 ---
 
-## 10. ⟶ Remaining for the designer
+## 10. ⟶ Changes since your round-2 renders (2026-06-13)
 
-The layouts are locked above. What's still needed:
+Your round-2 production renders (B-tight Map, lollipop Timeline, all states + WiFi QR,
+Public Sans) are **accepted and in the firmware** — the **double-ring headline** and the
+**swarm `×n` collapse** included. A few small **label/behaviour tweaks** landed after,
+from on-device review; please fold these into the final art:
 
-1. **Page 1 production render** incorporating **B-tight** (§4): bigger 36 px numerals
-   with the right-hand descriptors, depth key, record — i.e. fill the right column the
-   way the `B-tight` reference mock shows. Final 1:1 1-bit render.
-2. **Page 2 production render** of the chosen **lollipop variant A** (§5).
-3. **Setup screen** updated with the **WiFi QR** (§7).
-4. **Public Sans** TTF (the single file we embed) — confirm it's the licence/weight set
-   you want; we fontconvert from it.
-5. **Legibility pass at true size** — print one frame at 100 % and read from ~60 cm. The
-   9–10 px micro-labels are the risk; flag any that need bumping or dropping.
+1. **"REC" → "Largest:"** — the Page 1 record line reads `Largest: M4.8 · May 3` (with
+   the colon). On Page 2's folded stat strip, `LARGEST M4.8`.
+2. **Daylight label** — the footer's third sun line is `Daylight: 13h 12m` (label in
+   front), not a bare interval.
+3. **km only** — the miles option was dropped; hero distance, rings, and depth are all
+   km. No unit toggle to depict.
+4. **12/24-hour applies to the sun too** — in 24-hour mode rise/set show `5:48 / 20:33`
+   (no am/pm), matching the clock.
 
-Deliver 1-bit PNG or vector with exact pixel coords — either works; we translate to the
-device. (Glyph geometry for moon/sun/dots is in §8 if you revise them.)
+Everything else in §1–§9 is current. Still genuinely useful from you: the **Public Sans
+TTF** (the single file we embed) and a **true-size legibility pass** on the 9–10 px
+micro-labels. Deliver 1-bit PNG or vector with exact pixel coords.
