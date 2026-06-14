@@ -174,7 +174,9 @@ f("cfg").addEventListener("submit",e=>{e.preventDefault();
  const b=new URLSearchParams({manual:"1",lat:f("lat").value,lon:f("lon").value,radius:f("radius").value,
   minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value});
  f("msg").textContent="Saving…";
- fetch("/api/config",{method:"POST",body:b}).then(()=>{f("msg").textContent="Saved ✓ — applying & refreshing…";setTimeout(load,1600);setTimeout(()=>{f("msg").textContent="Saved ✓";},4200);});
+ fetch("/api/config",{method:"POST",body:b}).then(r=>r.ok?r.text():r.text().then(t=>Promise.reject(t)))
+  .then(()=>{f("msg").textContent="Saved ✓ — applying & refreshing…";setTimeout(load,1600);setTimeout(()=>{f("msg").textContent="Saved ✓";},4200);})
+  .catch(e=>{f("msg").style.color="#a3301f";f("msg").textContent="Rejected: "+e;});
 });
 function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Done — the device is restarting. This page is unreachable for ~10 s; reload it then."));}
 </script></body></html>)HTML";
@@ -286,6 +288,8 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     v = ""; P("poll", v);   if (v.length()) c.pollMin = v.toInt();
     v = ""; P("clock", v);  if (v.length()) c.clock24h = (v == "24");
     v = ""; P("tz", v);     if (v.length()) c.tz = v;
+    String err;
+    if (!settings::validate(c, err)) { req->send(400, "text/plain", err); return; }
     settings::update(c);
     req->send(200, "application/json", "{\"ok\":true}");
     g_applyConfig = true;   // main loop re-applies TZ + forces a re-fetch (no reboot)
@@ -298,8 +302,8 @@ void begin() {
   if (g_started) return;
   g_started = true;
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest* r) { r->send_P(200, "text/html", PAGE_HTML); });
-  server.on("/settings", HTTP_GET, [](AsyncWebServerRequest* r) { r->send_P(200, "text/html", SETTINGS_HTML); });
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest* r) { r->send(200, "text/html", PAGE_HTML); });
+  server.on("/settings", HTTP_GET, [](AsyncWebServerRequest* r) { r->send(200, "text/html", SETTINGS_HTML); });
   server.on("/api/state", HTTP_GET, [](AsyncWebServerRequest* r) {
     JsonDocument doc; buildState(doc);
     AsyncResponseStream* res = r->beginResponseStream("application/json");

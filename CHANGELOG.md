@@ -4,6 +4,19 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.6.2] — 2026-06-13 · Review hardening, pass 1
+External code review (Codex). Bounded fixes applied:
+- **Server-side settings validation** — lat/lon/radius/min-mag/poll bounds + TZ
+  allowlist; rejects NaN/out-of-range with HTTP 400 + field message; the settings page
+  shows the rejection. NVS values are **repaired** (clamped) on boot.
+- **"Felt nearby" count** now uses the same **≤50 km** rule as the badge (was any
+  felt-in-radius).
+- **OTA default-password compile `#warning`** — fails loud until a unique
+  `OTA_PASSWORD` is set in `personalization.h` for the gift build.
+- Pinned **ElegantOTA to exact 3.1.6**; replaced deprecated `send_P` calls.
+- *(Deferred to hardening pass 2 — see ROADMAP Gate 6: trustworthy-time gating + HTTP
+  Date fallback, the async config/data race, bounded USGS parsing, auto-AP safety.)*
+
 ## [0.6.1] — 2026-06-13 · Web header + label polish
 - **Firmware version shown** next to "Ground Truth" in the main page header (dev aid).
 - **Header is now sticky** — the title + Settings link stay put when scrolling.

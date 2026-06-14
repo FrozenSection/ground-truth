@@ -240,7 +240,8 @@ int count7d() { return (int)g_events.size(); }
 int feltCount24h() {
   time_t cut = timekeeper::now() - 86400L;
   int n = 0;
-  for (const auto& q : g_events) if (q.t >= cut && q.felt > 0) n++;
+  for (const auto& q : g_events)
+    if (q.t >= cut && q.felt > 0 && q.distKm <= 50) n++;   // "nearby" = same ≤50 km as the badge
   return n;
 }
 

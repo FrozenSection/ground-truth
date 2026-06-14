@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.6.1"   // web header (version + sticky), label tweaks
+#define FIRMWARE_VERSION "0.6.2"   // review pass 1: settings validation, felt≤50km, OTA-pw warning
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -39,6 +39,7 @@
 #endif
 #ifndef OTA_PASSWORD
 #define OTA_PASSWORD "groundtruth"
+#warning "Using the DEFAULT OTA password — set a unique OTA_PASSWORD in include/personalization.h before the gift build."
 #endif
 
 // ---- E-paper wiring (ESP32 Feather V2 + eInk Feather Friend) ----
