@@ -204,16 +204,22 @@ function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
  lastGeo={q:(c.name||"").trim(),lat:+c.lat,lon:+c.lon,name:c.name||""};
 });}
 load();
-f("findbtn").addEventListener("click",()=>{const q=f("place").value.trim();if(!q)return;
+// Run a geocode for the place box, updating the "Found: …" subtext + coords + label.
+// Returns a promise so Save can await it; rejects on no-match/network so Save aborts.
+function doFind(){const q=f("place").value.trim();if(!q)return Promise.resolve();
  f("geomsg").textContent="searching…";
- geocode(q).then(g=>{applyGeo(g);f("geomsg").textContent="Found: "+g.full.slice(0,60);})
-  .catch(err=>{f("geomsg").textContent=(err==="no match")?"No match — try a city and state.":"Search unavailable — enter coordinates manually.";});});
+ return geocode(q).then(g=>{applyGeo(g);f("geomsg").textContent="Found: "+g.full.slice(0,60);})
+  .catch(err=>{f("geomsg").textContent=(err==="no match")?"No match — try a city and state.":"Search unavailable — enter coordinates manually.";return Promise.reject(err);});}
+f("findbtn").addEventListener("click",()=>{doFind().catch(()=>{});});
+// Enter in the search box = Find (preview), not Save — keeps the subtext in sync and
+// avoids a surprise commit. (Enter in other fields still submits, the usual form behavior.)
+f("place").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doFind().catch(()=>{});}});
 f("cfg").addEventListener("submit",e=>{e.preventDefault();
  const place=f("place").value.trim();
  f("msg").style.color="#1a7f37";f("msg").textContent="Saving…";
  // Couple search -> save: if the place text changed since the last resolve, geocode NOW
- // so the saved coordinates always match the label (no silent drift).
- const prep=(place&&place!==lastGeo.q)?geocode(place).then(applyGeo):Promise.resolve();
+ // (via doFind, so the subtext updates too) so the saved coordinates always match.
+ const prep=(place&&place!==lastGeo.q)?doFind():Promise.resolve();
  prep.then(()=>{
   const label=f("label").value.trim();
   const name=label||(place?lastGeo.name:"");   // editable label wins; else verified name; else blank -> device shows lat,lon

@@ -4,6 +4,14 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.3] — 2026-06-14 · Settings: Enter = Find, consistent geocode feedback
+- **Enter in the search box now runs Find**, not a silent Save. Previously the place box
+  was inside the form, so Enter submitted (Save) — which moved the location but only
+  updated the "Saving…" message, never the "Found: …" search subtext, so it looked like
+  nothing was searched. Enter now geocodes and updates the subtext + coordinates + label;
+  Save remains the deliberate commit. The Save path also refreshes that subtext whenever
+  it geocodes, so feedback is the same however you trigger it.
+
 ## [0.8.2] — 2026-06-14 · Settings: couple geocode to Save; editable verified label
 - **Search and Save are now coupled.** Previously the place box was just a label saved as
   text — you could type "davis", Save, and the footer label changed while the coordinates
