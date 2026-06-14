@@ -186,12 +186,20 @@ locking down settings**. Keep day-to-day use **frictionless**.
   **home/apartment → WiFi; managed/dorm → Ethernet + MAC register.** No
   WPA2-Enterprise/PEAP, no NetID password stored, works anywhere.
   **New work this creates:**
-  - *Firmware:* bring up **W5500 over SPI** (arduino-esp32 `ETH`); `online = WiFi ||
-    Ethernet`; expose **both MACs**; the captive portal exits when Ethernet links; a
-    **unified Connect screen** (both paths + both MACs, no swap — DISPLAY-SPEC §10.9).
-  - *Hardware:* W5500 Ethernet board + **RJ45**, SPI **CS/INT/RST** on the shared bus
-    (must avoid the EPD pins 15/33/32/14), and an **RJ45 enclosure cutout**. *(Scott has
-    follow-up Q's on the jack/board — TBD.)*
+  - *Firmware:* bring up the W5500 via **arduino-esp32 `ETH` (SPI, lwIP-integrated)** so
+    the existing HTTPS fetch routes over either interface transparently — **NOT** the
+    standalone Arduino Ethernet library (separate stack; can't share our TLS/HTTP code).
+    `online = WiFi || Ethernet`; expose **both MACs** (`WiFi.macAddress()` +
+    `ETH.macAddress()`, both efuse-stable); captive portal exits when Ethernet links;
+    unified Connect screen (DISPLAY-SPEC §10.9).
+  - *Hardware (board chosen 2026-06-13):* **Adafruit WIZ5500 breakout #6348** — plain
+    SPI W5500 ("co-processor" = its built-in TCP/IP stack), on-board level-shifting +
+    RJ45 link/act LEDs. **Breakout, not a stacked Wing** (cleaner with the eInk Friend's
+    FPC; flexible RJ45 placement in the custom case). Shares SPI (SCK 5 / MOSI 19 /
+    MISO 21); **proposed control pins CS=GPIO4 (A5), INT=25 (A1), RST=27** — avoid EPD
+    15/33/32/14, button 26, strapping 0/2/12/15, input-only 34/36/39; keeps I²C (22/20)
+    free. Power the breakout from **5 V** (its own reg) to spare the 3.3 V rail. RJ45
+    enclosure cutout. *Bench-validate: SPI sharing + dual-stack default route.*
   Firmware/display work continues in parallel; the Ethernet bring-up waits on the board.
 - **Pin caveat:** must be a *non-strapping* GPIO (avoid PICO GPIO0/2/12/15) so a
   pressed button at power-up can't change boot mode. I²C/analog pins are good
