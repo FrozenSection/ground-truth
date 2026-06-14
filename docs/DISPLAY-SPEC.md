@@ -60,9 +60,8 @@ for screens. One TTF, converted at this deliberate size scale:
 - Keep **+0.5–1 px tracking** on caps labels.
 - Watch the `·` (mid-dot) and `<` glyphs at 9 px; **fallback: swap the mid-dot for a
   spaced hyphen** if it drops out on the panel.
-- Font set is **Bold / Regular / Medium** (in `assets/fonts/PublicSans/`). The pass used
-  **SemiBold** for the Quiet caption + location — map those to **Bold** / **Medium**
-  respectively (or add `PublicSans-SemiBold.ttf` if we want the exact weight).
+- Font set is **Bold / SemiBold / Medium / Regular** (in `assets/fonts/PublicSans/`).
+  **SemiBold** is used for the Quiet caption + monitoring location, matching the pass.
 - **Not final:** that sheet is a browser (anti-aliased) render — the real check is
   fontconvert → render on the GDEY042T81 → read at ~60 cm. **On-panel re-shoot is a
   Gate 4 task (needs hardware).**
