@@ -4,6 +4,23 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.7.0] — 2026-06-13 · Review hardening, pass 2 (reliability)
+- **Trustworthy time** — HTTP `Date:`-header fallback sets the clock when NTP is blocked
+  (campus, no RTC). When the clock isn't trustworthy the device + web mirror show a
+  **"syncing time"** state instead of 1970 dates / "just now" ages / bogus 24 h counts.
+- **Async data race fixed** — seismic results are built locally then **published under a
+  mutex**; `/api/state` and `settings::update` take the same lock. This also yields
+  **keep-last-good**: a failed/garbled fetch no longer wipes the current dataset.
+- **Bounded + validated USGS parse** — reject an oversized response (Content-Length cap)
+  and drop any event with non-finite / out-of-range magnitude, coordinates, depth, or
+  timestamp.
+- **Auto-AP safety** — a previously-provisioned device that loses WiFi now **keeps
+  retrying STA and holds its last frame**; it never auto-opens a blocking setup portal
+  or auto-erases working creds (a managed-network maintenance window can't strand it).
+  Re-provisioning a real move is the deliberate **button-hold / web Change-WiFi**.
+- **All-time "Largest" resets** when the configured location moves materially.
+- **CI** — GitHub Actions builds both PlatformIO envs on push/PR.
+
 ## [0.6.2] — 2026-06-13 · Review hardening, pass 1
 External code review (Codex). Bounded fixes applied:
 - **Server-side settings validation** — lat/lon/radius/min-mag/poll bounds + TZ

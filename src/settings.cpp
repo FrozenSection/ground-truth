@@ -1,5 +1,6 @@
 #include "settings.h"
 #include "config.h"
+#include "statelock.h"
 #include <Preferences.h>
 #include <math.h>
 
@@ -63,6 +64,7 @@ bool validate(const Config& c, String& err) {
 }
 
 void update(const Config& c) {
+  std::lock_guard<std::mutex> lk(g_stateMutex);   // /api/state reads g concurrently
   g = c;
   g.unitsKm = true;                 // km everywhere
   repair(g);

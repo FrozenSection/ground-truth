@@ -33,6 +33,7 @@ namespace seismic {
 
   void begin();           // load record high-water from NVS
   bool fetch();           // do the query + parse + compute; true on success
+  void resetRecord();     // clear the all-time "largest" (e.g. on a location change)
 
   bool   hasData();
   time_t lastFetch();     // 0 if never

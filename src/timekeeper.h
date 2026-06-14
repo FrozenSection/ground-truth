@@ -7,8 +7,14 @@
 // clock, so this comes in at Gate 2.
 namespace timekeeper {
   void   begin(const String& tz);   // configTzTime + NTP servers
-  bool   synced();                  // clock has a real (post-2021) time
+  bool   synced();                  // clock has a real (post-2023) time, any source
   time_t now();
+
+  // Set the clock from an HTTP `Date:` response header (RFC 1123) when NTP hasn't
+  // synced — campus networks often block UDP 123 and there's no RTC. No-op if the
+  // clock is already good. Returns true if it set the time.
+  bool   setFromHttpDate(const String& httpDate);
+  const char* source();             // "ntp" / "http" / "none"
 
   String clockHM(bool h24);   // "3:42" or "15:42"
   String ampm(bool h24);      // "pm" / "am" (empty when h24)

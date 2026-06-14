@@ -6,6 +6,7 @@
 #include "astro.h"
 #include "viewstate.h"
 #include "provisioning.h"
+#include "statelock.h"
 
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
@@ -67,25 +68,30 @@ function render(d){
  (d.clusters||[]).forEach(c=>{const [x,y]=plot(c.dk,c.bd);add(el("circle",{cx:x,cy:y,r:10,fill:"none",stroke:"#000","stroke-dasharray":"2 2.5"}));add(el("circle",{cx:x,cy:y,r:5,fill:"#000"}));add(tx(+x+10,+y-6,"×"+c.n,{"font-size":11,"font-weight":700}));});
  {const hq=(d.events||[]).find(q=>q.head);if(hq){const [x,y]=plot(hq.dk,hq.bd);add(el("circle",{cx:x,cy:y,r:8.5,fill:"none",stroke:"#000"}));add(el("circle",{cx:x,cy:y,r:6,fill:"none",stroke:"#000"}));add(el("circle",{cx:x,cy:y,r:4,fill:"#000"}));}}
  const t=d.stats;
- add(tx(212,130,t.c24,{"font-size":38,"font-weight":700}));add(tx(250,116,"IN 24 H",{"font-size":9,"font-weight":700}));add(tx(250,130,t.felt24>0?`${t.felt24} felt nearby`:"none felt",{"font-size":11}));
+ add(tx(212,130,d.timeOK?t.c24:"—",{"font-size":38,"font-weight":700}));add(tx(250,116,"IN 24 H",{"font-size":9,"font-weight":700}));add(tx(250,130,d.timeOK?(t.felt24>0?`${t.felt24} felt nearby`:"none felt"):"",{"font-size":11}));
  add(tx(212,180,t.c7+(t.capped?"+":""),{"font-size":38,"font-weight":700}));add(tx(262,166,"IN 7 DAYS",{"font-size":9,"font-weight":700}));
  const mr=t.magLo.toFixed(1)===t.magHi.toFixed(1)?`M${t.magLo.toFixed(1)}`:`M${t.magLo.toFixed(1)} – M${t.magHi.toFixed(1)}`;add(tx(262,180,mr,{"font-size":11}));
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
  add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8 km",{"font-size":10}));
  add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8 km",{"font-size":10}));
  if(t.recMag>0)add(tx(212,238,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));
- add(el("line",{x1:0,y1:242,x2:400,y2:242,stroke:"#000"}));add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
- add(tx(16,271,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,271,d.time.ampm,{"font-size":12,"font-weight":600}));
- add(tx(16,291,d.time.date,{"font-size":12}));
- add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
- [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
- if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
- else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
- if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}
+ add(el("line",{x1:0,y1:242,x2:400,y2:242,stroke:"#000"}));
+ if(!d.timeOK){
+  add(tx(200,276,"Waiting for time sync…",{"font-size":12,"text-anchor":"middle",fill:"#555"}));
+ } else {
+  add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
+  add(tx(16,271,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,271,d.time.ampm,{"font-size":12,"font-weight":600}));
+  add(tx(16,291,d.time.date,{"font-size":12}));
+  add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
+  [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
+  if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
+  else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
+  if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}
+ }
 }
 function tick(){fetch("/api/state").then(r=>r.json()).then(d=>{
  document.getElementById("ver").textContent="v"+d.fw;
- document.getElementById("sub").textContent=(d.online?"online":"offline")+" · "+d.host+".local · updated "+(d.fetch?d.fetch.rel:"never");
+ document.getElementById("sub").textContent=(d.online?"online":"offline")+" · "+d.host+".local · updated "+(d.fetch?d.fetch.rel:"never")+(d.timeOK?"":" · ⏳ syncing time");
  render(d);const rows=document.getElementById("rows");rows.innerHTML="";
  (d.events||[]).slice(0,12).forEach(q=>{rows.innerHTML+=`<tr><td>M${q.mag.toFixed(1)}</td><td>${esc(q.pl)}</td><td class="r">${q.dd} ${d.loc.units} ${q.bn}</td><td class="r">${q.dep} km</td><td class="r muted">${q.rel}</td></tr>`;});
 }).catch(e=>{document.getElementById("sub").textContent="fetch error: "+e;});}
@@ -182,7 +188,11 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
 </script></body></html>)HTML";
 
   void buildState(JsonDocument& doc) {
+    std::lock_guard<std::mutex> lk(g_stateMutex);   // seismic state is mutated in the main loop
     const auto& c = settings::get();
+    const bool ok = timekeeper::synced();           // time trustworthy? gate derived fields
+    doc["timeOK"]  = ok;
+    doc["timeSrc"] = timekeeper::source();
     doc["fw"]   = FIRMWARE_VERSION;
     doc["host"] = MDNS_HOSTNAME;
     doc["mac"]  = WiFi.macAddress();
@@ -203,11 +213,11 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     cf["pollMin"] = c.pollMin; cf["clock24h"] = c.clock24h; cf["tz"] = c.tz;
 
     JsonObject tm = doc["time"].to<JsonObject>();
-    tm["hm"] = timekeeper::clockHM(c.clock24h);
-    tm["ampm"] = timekeeper::ampm(c.clock24h);
-    tm["date"] = timekeeper::dateStr();
+    tm["hm"]   = ok ? timekeeper::clockHM(c.clock24h) : "--:--";
+    tm["ampm"] = ok ? timekeeper::ampm(c.clock24h) : "";
+    tm["date"] = ok ? timekeeper::dateStr() : "";
 
-    if (timekeeper::synced()) {
+    if (ok) {
       time_t n = timekeeper::now();
       astro::Moon m = astro::moon(n);
       JsonObject mo = doc["moon"].to<JsonObject>();
@@ -227,14 +237,14 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     if (seismic::hasData()) {
       JsonObject ft = doc["fetch"].to<JsonObject>();
       ft["epoch"] = (long)seismic::lastFetch();
-      ft["rel"]   = timekeeper::relative(seismic::lastFetch());
+      ft["rel"]   = ok ? timekeeper::relative(seismic::lastFetch()) : "—";
     }
 
     int m2, m3, m4; seismic::histogram(m2, m3, m4);
     float lo, hi;   seismic::magRange(lo, hi);
     JsonObject st = doc["stats"].to<JsonObject>();
-    st["c24"] = seismic::count24h(); st["c7"] = seismic::count7d();
-    st["capped"] = seismic::count7dCapped(); st["felt24"] = seismic::feltCount24h();
+    st["c24"] = ok ? seismic::count24h() : -1; st["c7"] = seismic::count7d();
+    st["capped"] = seismic::count7dCapped(); st["felt24"] = ok ? seismic::feltCount24h() : -1;
     st["m2"] = m2; st["m3"] = m3; st["m4"] = m4;
     st["magLo"] = lo; st["magHi"] = hi;
     st["recMag"] = seismic::recordMag(); st["recDate"] = seismic::recordDate();
@@ -250,7 +260,7 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
       hd["unit"] = settings::distUnit();
       hd["bearing"] = seismic::bearingName(q.bearingDeg);
       hd["depthKm"] = (int)round(q.depthKm);
-      hd["rel"] = timekeeper::relative(q.t);
+      hd["rel"] = ok ? timekeeper::relative(q.t) : "";
       hd["badge"] = seismic::badge(q);
     }
 
@@ -262,7 +272,7 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
       o["dep"] = (int)round(q.depthKm); o["pl"] = q.place;
       o["dd"] = (int)round(settings::toDisplayDist(q.distKm));
       o["bn"] = seismic::bearingName(q.bearingDeg);
-      o["rel"] = timekeeper::relative(q.t);
+      o["rel"] = ok ? timekeeper::relative(q.t) : "";
       o["head"] = ((int)i == hi_idx);
       o["cl"] = q.clustered;
     }

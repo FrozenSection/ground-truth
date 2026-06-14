@@ -16,6 +16,13 @@
 #include "timekeeper.h"
 #include "seismic.h"
 #include "web.h"
+#include "statelock.h"
+#include <math.h>
+
+// Definition of the shared-state lock declared in statelock.h. Held briefly when
+// publishing seismic results / applying settings (main loop) and when serving
+// /api/state (web task).
+std::mutex g_stateMutex;
 
 static volatile bool g_wifiResetPending = false;
 static volatile bool g_viewChanged      = false;
@@ -42,6 +49,7 @@ static void pollButton() {
 
 // Interim panel output until the Gate 4 layouts land: headline summary.
 static void showHeadline() {
+  if (!timekeeper::synced()) { epd::message("Ground Truth", "syncing time..."); return; }
   const auto& evs = seismic::events();
   int h = seismic::headlineIndex();
   if (h < 0) {
@@ -89,15 +97,16 @@ void setup() {
   if (online) {
     provisioning::clearFresh();
   } else if (provisioning::freshlyProvisioned()) {
+    // Creds entered moments ago don't connect (typo / wrong network) -> portal+error.
     Serial.println(F("[wifi] fresh creds failed -> portal"));
     epd::setupScreen(AP_NAME, AP_PASS, provisioning::staMac(), /*error=*/true);
     provisioning::openPortal();
-  } else if (!provisioning::ssidVisible(provisioning::storedSsid())) {
-    Serial.println(F("[wifi] stored SSID not in range -> auto-AP"));
-    epd::setupScreen(AP_NAME, AP_PASS, provisioning::staMac());
-    provisioning::openPortal();
   } else {
-    Serial.println(F("[wifi] SSID present but not connecting -> retry in loop"));
+    // Previously-good creds not connecting (router down, transient, or moved). Do NOT
+    // auto-open a blocking portal — keep retrying STA in loop() and retain the last
+    // frame. A real move is re-provisioned deliberately (button hold / web Change-WiFi),
+    // so a managed-network maintenance window can't strand the device in AP mode.
+    Serial.println(F("[wifi] not connecting now -> keep retrying in loop"));
   }
 
   epd::message("Ground Truth", online ? "syncing time + data..." : "offline - reconnecting");
@@ -108,13 +117,13 @@ void loop() {
   static int           wasOnline    = -1;
   static bool          servicesUp   = false;
   static bool          netUp        = false;
-  static unsigned long netUpMs      = 0;
-  static unsigned long offlineSince = 0;
   static unsigned long lastReconnect = 0;
   static int           reconnectTries = 0;
   static unsigned long lastFetchMs  = 0;
   static bool          firstFetch   = false;
   static bool          forceFetch   = false;
+  static float         appliedLat   = settings::get().lat;   // for location-change detect
+  static float         appliedLon   = settings::get().lon;
 
   pollButton();
 
@@ -152,36 +161,32 @@ void loop() {
   if (online && !netUp) {
     timekeeper::begin(settings::get().tz);
     web::begin();
-    netUp   = true;
-    netUpMs = nowMs;
+    netUp = true;
   }
   if (netUp) web::loop();   // ElegantOTA housekeeping
 
-  // Settings saved from the web: re-apply TZ live and force an immediate re-fetch
-  // (no reboot — the page just refreshes).
+  // Settings saved from the web: re-apply TZ live, reset the all-time record if the
+  // location moved materially, and force an immediate re-fetch (no reboot).
   if (web::consumeApplyConfig()) {
     Serial.println(F("[main] settings saved -> re-apply TZ + re-fetch"));
     timekeeper::begin(settings::get().tz);
+    const auto& cfg = settings::get();
+    if (fabs(cfg.lat - appliedLat) > 0.1f || fabs(cfg.lon - appliedLon) > 0.1f) {
+      seismic::resetRecord();
+    }
+    appliedLat = cfg.lat; appliedLon = cfg.lon;
     forceFetch = true;
   }
 
-  // Reconnect supervision + auto-AP on a sustained move.
-  if (online) { offlineSince = 0; reconnectTries = 0; }
-  else {
-    if (offlineSince == 0) offlineSince = nowMs;
-    if (lastReconnect == 0 || nowMs - lastReconnect > RECONNECT_EVERY_MS) {
-      if (++reconnectTries % 4 == 0) {
-        Serial.println(F("[net] reconnect not sticking -> full radio restart"));
-        WiFi.disconnect(true); delay(100); provisioning::beginStored();
-      } else { WiFi.reconnect(); }
-      lastReconnect = nowMs;
-    }
-    if (nowMs - offlineSince > AUTO_AP_AFTER_MS &&
-        !provisioning::ssidVisible(provisioning::storedSsid())) {
-      Serial.println(F("[net] sustained offline + SSID absent -> auto-AP"));
-      epd::setupScreen(AP_NAME, AP_PASS, provisioning::staMac());
-      provisioning::openPortal();
-    }
+  // Reconnect supervision — keep retrying STA forever when offline (never auto-open a
+  // blocking portal; reprovision is the deliberate button-hold / web Change-WiFi).
+  if (online) { reconnectTries = 0; }
+  else if (lastReconnect == 0 || nowMs - lastReconnect > RECONNECT_EVERY_MS) {
+    if (++reconnectTries % 4 == 0) {
+      Serial.println(F("[net] reconnect not sticking -> full radio restart"));
+      WiFi.disconnect(true); delay(100); provisioning::beginStored();
+    } else { WiFi.reconnect(); }
+    lastReconnect = nowMs;
   }
 
   if ((int)online != wasOnline) {
@@ -189,13 +194,12 @@ void loop() {
     wasOnline = online;
   }
 
-  // Poll USGS. Wait for NTP (recency/windows need it) but don't block forever on
-  // a network that filters NTP — fall through after a grace period (Gate 3 adds
-  // the HTTP Date-header fallback).
+  // Poll USGS. We fetch as soon as we're online (even before NTP): the fetch reads
+  // the HTTPS Date header to set the clock when NTP is blocked, and time-dependent
+  // display fields are gated on a trustworthy clock elsewhere.
   if (online && netUp) {
-    bool timeReady = timekeeper::synced() || (nowMs - netUpMs > 45000UL);
     unsigned long pollMs = (unsigned long)settings::get().pollMin * 60000UL;
-    if (timeReady && (!firstFetch || forceFetch || nowMs - lastFetchMs >= pollMs)) {
+    if (!firstFetch || forceFetch || nowMs - lastFetchMs >= pollMs) {
       if (seismic::fetch()) {
         lastFetchMs = nowMs; firstFetch = true; forceFetch = false;
         printSummary();

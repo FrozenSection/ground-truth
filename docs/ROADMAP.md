@@ -28,8 +28,8 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       histogram + range + felt, **swarm clustering** (≥6 within 15 km → `×n`), NVS
       all-time **largest**. *(live-verified against real USGS data.)*
 - [x] **Gate 3 — Time + astro.** NTP/TZ, **on-device NOAA** sunrise/sunset, moon phase
-      (12/24 h honored). **Leftover:** HTTP `Date:`-header NTP fallback (campus blocks
-      UDP 123, no RTC) — not yet implemented.
+      (12/24 h honored), **HTTP `Date:`-header fallback** when NTP is blocked, and
+      **time-quality gating** (no derived fields shown until the clock is trustworthy).
 - [ ] **Gate 4 — Display integration *(the remaining big piece — needs the panel)*.**
       Port the locked layouts to GxEPD2: **B-tight Map** + **lollipop Timeline** + all
       states (incl. the WiFi **QR**), the view system (full-screen pages, persistent
@@ -41,9 +41,12 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       place-name geocode, live-apply no-reboot), **ElegantOTA `/update` with basic
       auth** (only update path; no espota), mDNS, Reboot / Change-WiFi. *(km-only,
       sticky header, version badge added per review.)*
-- [ ] **Gate 6 — Gift hardening.** Watchdog, button hold-confirm guard test, distant-
-      override field test, **security pass**, 72 h soak, recovery card, finalize
-      defaults, → 1.0.0.
+- [~] **Gate 6 — Gift hardening.** **Done (review pass 2):** trustworthy-time gating +
+      Date fallback, async data-race mutex + keep-last-good, bounded/validated USGS
+      parse, auto-AP safety (no blocking portal / no auto-erase), settings validation,
+      OTA-password warning, CI. **Remaining:** task watchdog + reset-reason logging,
+      button hold→confirm UI (with Gate 4), distant-location field test, 72 h soak with
+      forced WiFi/DNS/NTP/USGS/power failures, recovery card, → 1.0.0.
 
 Commit per gate. (Gates landed somewhat out of order — web/OTA came early to preview
 real data; only Gate 4 and the Gate 3 leftover remain before hardening.)

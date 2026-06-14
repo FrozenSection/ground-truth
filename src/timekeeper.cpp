@@ -1,6 +1,22 @@
 #include "timekeeper.h"
 #include "config.h"
 
+namespace {
+  bool g_setViaHttp = false;
+
+  // Days since 1970-01-01 for a civil (proleptic Gregorian) date — Howard Hinnant's
+  // algorithm. Lets us turn the UTC fields from strptime into an epoch without timegm
+  // (absent in this newlib).
+  long long daysFromCivil(int y, unsigned m, unsigned d) {
+    y -= m <= 2;
+    long long era = (y >= 0 ? y : y - 399) / 400;
+    unsigned yoe = (unsigned)(y - era * 400);
+    unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+    unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return era * 146097LL + (long long)doe - 719468;
+  }
+}
+
 namespace timekeeper {
 
 void begin(const String& tz) {
@@ -9,6 +25,27 @@ void begin(const String& tz) {
 }
 
 bool synced() { return time(nullptr) > 1700000000; }   // ~2023-11
+
+bool setFromHttpDate(const String& httpDate) {
+  if (synced()) return false;                 // NTP already gave us real time
+  if (httpDate.length() < 25) return false;
+  struct tm tm = {};
+  if (!strptime(httpDate.c_str(), "%a, %d %b %Y %H:%M:%S", &tm)) return false;
+  time_t t = (time_t)(daysFromCivil(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday) * 86400LL
+                      + tm.tm_hour * 3600LL + tm.tm_min * 60LL + tm.tm_sec);  // header is UTC
+  if (t < 1700000000) return false;
+  struct timeval tv = { t, 0 };
+  settimeofday(&tv, nullptr);
+  g_setViaHttp = true;
+  Serial.printf("[time] set from HTTP Date header (%ld)\n", (long)t);
+  return true;
+}
+
+const char* source() {
+  if (!synced())    return "none";
+  if (g_setViaHttp) return "http";
+  return "ntp";
+}
 
 time_t now() { return time(nullptr); }
 

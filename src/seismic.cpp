@@ -8,6 +8,7 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <math.h>
+#include "statelock.h"
 
 namespace {
   const int    QUERY_LIMIT  = 100;            // bounded RAM; "100+" if hit
@@ -154,18 +155,32 @@ bool fetch() {
   Serial.printf("[usgs] GET %s\n", url.c_str());
 
   WiFiClientSecure client;
-  client.setInsecure();                 // v1 — display-only data, MITM can't take over
+  client.setInsecure();                 // v1 — display-only data; bounded+validated below
   HTTPClient http;
   http.setTimeout(15000);
   http.setUserAgent("GroundTruth/" FIRMWARE_VERSION);
   if (!http.begin(client, url)) { Serial.println("[usgs] begin failed"); return false; }
+  const char* hdrKeys[] = { "Date" };
+  http.collectHeaders(hdrKeys, 1);
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
-    Serial.printf("[usgs] HTTP %d\n", code);
+    Serial.printf("[usgs] HTTP %d (keeping last good)\n", code);
     http.end();
     return false;
   }
+
+  // Bound the response (oversized/hostile body) before materializing it.
+  int len = http.getSize();
+  if (len > MAX_RESP_BYTES) {
+    Serial.printf("[usgs] response too large (%d) — rejecting\n", len);
+    http.end();
+    return false;
+  }
+
+  // Bootstrap the clock from the HTTPS Date header if NTP hasn't synced (campus
+  // blocks UDP 123, no RTC) — do it BEFORE computing recency/windows.
+  timekeeper::setFromHttpDate(http.header("Date"));
 
   // Filtered, streamed parse — only the fields we display.
   JsonDocument filter;
@@ -182,43 +197,69 @@ bool fetch() {
   DeserializationError err = deserializeJson(
       doc, http.getStream(), DeserializationOption::Filter(filter));
   http.end();
-  if (err) { Serial.printf("[usgs] parse: %s\n", err.c_str()); return false; }
+  if (err) { Serial.printf("[usgs] parse: %s (keeping last good)\n", err.c_str()); return false; }
 
   const auto& c = settings::get();
   JsonArray feats = doc["features"].as<JsonArray>();
-  g_events.clear();
-  g_capped = feats.size() >= (size_t)QUERY_LIMIT;
+  bool capped = feats.size() >= (size_t)QUERY_LIMIT;
 
+  // Build into a LOCAL vector with per-field validation; only publish on success
+  // (so a malformed/empty response keeps the last good dataset).
+  std::vector<Quake> local;
   for (JsonObject f : feats) {
-    if (g_events.size() >= (size_t)QUERY_LIMIT) break;
+    if (local.size() >= (size_t)QUERY_LIMIT) break;
     JsonObject pr = f["properties"];
     JsonArray  co = f["geometry"]["coordinates"];
-    if (pr["mag"].isNull() || co.size() < 3) continue;
+    if (co.size() < 3) continue;
+
+    float mag = pr["mag"].as<float>();
+    float lon = co[0].as<float>(), lat = co[1].as<float>(), dep = co[2].as<float>();
+    long long ms = pr["time"].as<long long>();
+    if (!isfinite(mag) || mag < -2 || mag > 10)        continue;
+    if (!isfinite(lat) || lat < -90 || lat > 90)       continue;
+    if (!isfinite(lon) || lon < -180 || lon > 180)     continue;
+    if (!isfinite(dep) || dep < -5 || dep > 800)       continue;
+    time_t t = (time_t)(ms / 1000);
+    if (t < 946684800LL)                               continue;   // before 2000 = bogus
 
     Quake q;
-    q.mag     = pr["mag"].as<float>();
-    q.lon     = co[0].as<float>();
-    q.lat     = co[1].as<float>();
-    q.depthKm = co[2].as<float>();
-    q.t       = (time_t)(pr["time"].as<long long>() / 1000);   // ms -> s
-    q.sig     = pr["sig"].isNull()   ? 0 : pr["sig"].as<int>();
-    q.felt    = pr["felt"].isNull()  ? 0 : pr["felt"].as<int>();
-    q.alert   = !pr["alert"].isNull();
-    q.place   = pr["place"].isNull() ? String("") : pr["place"].as<String>();
+    q.mag = mag; q.lon = lon; q.lat = lat; q.depthKm = dep; q.t = t;
+    q.sig   = pr["sig"].isNull()   ? 0 : pr["sig"].as<int>();
+    q.felt  = pr["felt"].isNull()  ? 0 : pr["felt"].as<int>();
+    q.alert = !pr["alert"].isNull();
+    q.place = pr["place"].isNull() ? String("") : pr["place"].as<String>();
     if (q.place.length() > PLACE_CAP) q.place = q.place.substring(0, PLACE_CAP);
     q.distKm     = haversineKm(c.lat, c.lon, q.lat, q.lon);
     q.bearingDeg = bearingDeg(c.lat, c.lon, q.lat, q.lon);
     q.clustered  = false;
-    g_events.push_back(q);
+    local.push_back(q);
   }
 
-  selectHeadline();
-  computeClusters();
-  updateRecord();
-  g_lastFetch = timekeeper::synced() ? timekeeper::now() : 1;
+  if (local.empty() && feats.size() > 0) {
+    Serial.println("[usgs] all events failed validation — keeping last good");
+    return false;
+  }
+
+  // Publish atomically under the state lock (the web task reads this concurrently).
+  {
+    std::lock_guard<std::mutex> lk(g_stateMutex);
+    g_events = std::move(local);
+    g_capped = capped;
+    selectHeadline();      // -> g_headline
+    computeClusters();     // -> g_clusters + clustered flags
+    updateRecord();        // -> g_recordMag/Date (+ NVS)
+    g_lastFetch = timekeeper::synced() ? timekeeper::now() : 1;
+  }
   Serial.printf("[usgs] %d events%s, headline idx %d\n",
                 (int)g_events.size(), g_capped ? " (capped)" : "", g_headline);
   return true;
+}
+
+void resetRecord() {
+  std::lock_guard<std::mutex> lk(g_stateMutex);
+  g_recordMag = 0; g_recordDate = "";
+  Preferences p; p.begin("rec", false); p.clear(); p.end();
+  Serial.println(F("[usgs] all-time record reset (location changed)"));
 }
 
 bool   hasData()   { return g_lastFetch != 0; }

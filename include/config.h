@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.6.2"   // review pass 1: settings validation, felt≤50km, OTA-pw warning
+#define FIRMWARE_VERSION "0.7.0"   // hardening pass 2: time fallback, data-race, bounded parse, auto-AP
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -103,3 +103,7 @@
 // The headline always breaks out as its own dot; the cluster counts the remainder.
 #define SWARM_MIN_COUNT   6
 #define SWARM_RADIUS_KM   15.0f
+
+// Reject a USGS response larger than this (defensive vs an oversized/hostile body —
+// TLS is setInsecure for v1). A legit 100-event geojson is well under this.
+#define MAX_RESP_BYTES    600000
