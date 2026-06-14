@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.8.0"   // Gate 4: Public Sans page renderer (Map + Timeline + states)
+#define FIRMWARE_VERSION "0.8.1"   // fix: re-fetch when the clock syncs (pre-sync query -> false "Quiet")
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

@@ -4,6 +4,16 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.1] — 2026-06-14 · Fix: false "Quiet" after boot
+- **Re-fetch the instant the clock becomes trustworthy.** The first USGS fetch can run
+  before the clock is synced (it bootstraps time from the HTTPS `Date:` header). That
+  pre-sync query omits the 7-day `starttime`, so its window is wrong — and on-device it
+  came back empty, leaving a **false "Quiet"** that persisted until the next 10-minute
+  poll (so every power-cycle showed an empty map for up to 10 min, even with real recent
+  activity). Now, the moment time is known, the device forces a re-fetch with a proper
+  7-day window. *Verified live: boot → Date-header sync → auto re-fetch → M3.4 headline,
+  24 h 2 / 7 d 8, with no manual save.* Also dropped a stale "Gate 2" boot banner.
+
 ## [0.8.0] — 2026-06-14 · Gate 4 — the real e-paper layouts
 - **Page renderer** (`src/display.cpp`) — the locked designer frames, drawn on GxEPD2:
   - **Page 1 "Map"** — √-scale radial map (rings at R⁄3 · 2R⁄3 · R, **radius-driven**

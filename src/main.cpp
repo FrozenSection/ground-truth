@@ -85,7 +85,7 @@ static void printSummary() {
 void setup() {
   Serial.begin(115200);
   delay(200);
-  Serial.printf("\n=== %s v%s — Gate 2 ===\n", PROJECT_NAME, FIRMWARE_VERSION);
+  Serial.printf("\n=== %s v%s ===\n", PROJECT_NAME, FIRMWARE_VERSION);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   viewstate::begin();
@@ -236,12 +236,17 @@ void loop() {
     renderCurrent();
   }
 
-  // Full re-render the moment the clock becomes trustworthy (hero recency + 24 h
-  // stat appear, footer leaves the "Setting clock…" state).
+  // The moment the clock becomes trustworthy: re-fetch AND re-render. The first
+  // fetch can run before the clock is good (it bootstraps time from the HTTPS Date
+  // header); that pre-sync query omits the 7-day `starttime`, so its window is wrong
+  // and can even come back empty — a false "Quiet" that otherwise persists until the
+  // next 10-minute poll. Forcing a fetch here makes the dataset properly 7-day-windowed
+  // as soon as time is known. (hero recency + 24 h stat also appear, footer leaves the
+  // "Setting clock…" state.)
   bool timeOK = timekeeper::synced();
   if ((int)timeOK != wasTimeOK) {
     wasTimeOK = timeOK;
-    if (timeOK && firstFetch) renderCurrent();
+    if (timeOK && firstFetch) { forceFetch = true; renderCurrent(); }
   }
 
   // Tick the footer clock on each minute boundary via a no-flash partial refresh
