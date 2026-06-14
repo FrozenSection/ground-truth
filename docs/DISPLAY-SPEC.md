@@ -326,3 +326,23 @@ A full 12-frame build reference. All of §10.1–9 delivered + every state. **Ac
 - **Ring labels radius-driven** (¼-thirds of the configured radius, not literal 300).
 - `/api/state` gains `loc.name` + a hero `offline` flag; footer clock spec → 24 px.
 - Footer cell 1 is the **width-tight spot** — confirm long names truncate cleanly.
+
+### Gate 4 — built (firmware, v0.8.0, 2026-06-14)
+Everything in §3–§7 is now rendered on the panel (`src/display.cpp`). The above
+firmware-side opens are all closed: geocode name stored in NVS → footer cell 1
+(home-pin + ellipsis-truncated to ~108 px) and `/api/state.loc.name`; ring labels are
+radius-driven white-knockout `R⁄3 · 2R⁄3 · R`; the hero draws the slashed-WiFi glyph
+from a root `offline` flag; the footer clock is 24 px and ticks via partial refresh.
+
+Implementation notes the designer should be aware of (for the next art pass):
+- **Public Sans is embedded as bitmap glyph tables** (`fontconvert` @ DPI 72 → the
+  spec's px == em). Range is **ASCII 32–126 only**. Consequences in firmware:
+  - the **`·` mid-dot is drawn as a small filled circle** (a UTF-8 shim), not a glyph;
+  - the **swarm count is `xN`** (lowercase x), not `×N`, and the **mag range uses `-`**,
+    not an en-dash. If the designer wants true `×` / `–`, we extend the glyph range.
+- **Refresh model:** full refresh (≈1–2 s flash) on poll / view-flip / connectivity
+  change; the **footer alone partial-refreshes each minute** to tick the clock without a
+  flash. Page-flip is currently a full refresh (the §2 "partial top-242" optimization is
+  available later if the flash on tap feels heavy on the panel).
+- **Still pending — the on-panel re-shoot** (§1 legibility pass): only confirmable on the
+  GDEY042T81 read at ~60 cm. The 9–10 px Medium/SemiBold micro-labels are the watch items.

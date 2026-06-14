@@ -26,8 +26,27 @@ std::mutex g_stateMutex;
 
 static volatile bool g_wifiResetPending = false;
 static volatile bool g_viewChanged      = false;
+static bool          g_awaitWifiConfirm = false;   // 3 s hold armed the Change-WiFi confirm
+static unsigned long g_confirmUntil     = 0;       // auto-cancel deadline
 
-// Smart button (GPIO BUTTON_PIN -> GND): tap = next view, hold = re-provision.
+// Render the active view from live module state. timeOK gates time-derived fields
+// (the "Acquiring time" treatment); online drives the reconnecting glyph; stale
+// stamps the readout when fetches have lapsed.
+static void renderCurrent() {
+  bool timeOK = timekeeper::synced();
+  bool online = (WiFi.status() == WL_CONNECTED);
+  bool stale  = false;
+  time_t lf = seismic::lastFetch();
+  if (timeOK && seismic::hasData() && lf > 0) {
+    long age   = (long)(timekeeper::now() - lf);
+    long pollS = (long)settings::get().pollMin * 60;
+    stale = age > (pollS * 3 + 120);               // missed ~3 polls -> data is old
+  }
+  epd::renderView(viewstate::current(), timeOK, online, stale);
+}
+
+// Smart button (GPIO BUTTON_PIN -> GND): tap = next view; 3 s hold = arm a
+// Change-WiFi confirm (a second tap confirms, inaction cancels — DISPLAY-SPEC §7).
 static void pollButton() {
   static bool          wasDown   = false;
   static unsigned long downAt    = 0;
@@ -37,31 +56,20 @@ static void pollButton() {
   if (down && !wasDown) { downAt = ms; longFired = false; }
   if (down && !longFired && ms - downAt >= BUTTON_HOLD_MS) {
     longFired = true;
-    Serial.println(F("[btn] hold -> WiFi re-provision (Gate 4 will add confirm)"));
-    g_wifiResetPending = true;
+    g_awaitWifiConfirm = true; g_confirmUntil = ms + 8000;
+    epd::changeWifiConfirm(provisioning::storedSsid());
+    Serial.println(F("[btn] hold -> Change-WiFi confirm (tap to confirm, wait to cancel)"));
   }
   if (!down && wasDown && !longFired && ms - downAt >= BUTTON_DEBOUNCE_MS) {
-    viewstate::next();
-    g_viewChanged = true;
+    if (g_awaitWifiConfirm) {                       // confirming the WiFi change
+      g_awaitWifiConfirm = false;
+      g_wifiResetPending = true;
+    } else {                                        // normal tap = cycle view
+      viewstate::next();
+      g_viewChanged = true;
+    }
   }
   wasDown = down;
-}
-
-// Interim panel output until the Gate 4 layouts land: headline summary.
-static void showHeadline() {
-  if (!timekeeper::synced()) { epd::message("Ground Truth", "syncing time..."); return; }
-  const auto& evs = seismic::events();
-  int h = seismic::headlineIndex();
-  if (h < 0) {
-    epd::message("Quiet", "no events in range", timekeeper::dateStr());
-    return;
-  }
-  const auto& q = evs[h];
-  char dist[40];
-  snprintf(dist, sizeof(dist), "%d %s %s · %s",
-           (int)round(settings::toDisplayDist(q.distKm)), settings::distUnit(),
-           seismic::bearingName(q.bearingDeg), timekeeper::relative(q.t).c_str());
-  epd::message(String("M") + String(q.mag, 1), q.place, dist);
 }
 
 static void printSummary() {
@@ -88,7 +96,9 @@ void setup() {
   Serial.printf("[net] station MAC: %s\n", provisioning::staMac().c_str());
 
   if (!provisioning::hasCreds()) {
-    epd::setupScreen(AP_NAME, AP_PASS, provisioning::staMac());
+    // Ethernet MAC is "" until the W5500 lands (Gate 1b) — the Connect screen
+    // shows it as not-installed; the WiFi path is the only one until then.
+    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), "");
     provisioning::openPortal();                 // blocks; reboots on save
   }
 
@@ -99,7 +109,7 @@ void setup() {
   } else if (provisioning::freshlyProvisioned()) {
     // Creds entered moments ago don't connect (typo / wrong network) -> portal+error.
     Serial.println(F("[wifi] fresh creds failed -> portal"));
-    epd::setupScreen(AP_NAME, AP_PASS, provisioning::staMac(), /*error=*/true);
+    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), "", /*error=*/true);
     provisioning::openPortal();
   } else {
     // Previously-good creds not connecting (router down, transient, or moved). Do NOT
@@ -124,8 +134,17 @@ void loop() {
   static bool          forceFetch   = false;
   static float         appliedLat   = settings::get().lat;   // for location-change detect
   static float         appliedLon   = settings::get().lon;
+  static int           lastMinute   = -1;                    // footer partial-refresh boundary
+  static int           wasTimeOK    = -1;                    // full re-render when the clock lands
 
   pollButton();
+
+  // Auto-cancel an unconfirmed Change-WiFi prompt: redraw the live view.
+  if (g_awaitWifiConfirm && (long)(millis() - g_confirmUntil) >= 0) {
+    g_awaitWifiConfirm = false;
+    Serial.println(F("[btn] Change-WiFi confirm timed out -> cancelled"));
+    renderCurrent();
+  }
 
   if (g_wifiResetPending || web::consumeWifiReset()) {
     g_wifiResetPending = false;
@@ -192,6 +211,7 @@ void loop() {
   if ((int)online != wasOnline) {
     Serial.printf("[net] WiFi %s\n", online ? "up" : "down");
     wasOnline = online;
+    if (firstFetch && !g_awaitWifiConfirm) renderCurrent();   // toggle the reconnecting glyph
   }
 
   // Poll USGS. We fetch as soon as we're online (even before NTP): the fetch reads
@@ -203,16 +223,32 @@ void loop() {
       if (seismic::fetch()) {
         lastFetchMs = nowMs; firstFetch = true; forceFetch = false;
         printSummary();
-        showHeadline();
+        renderCurrent();
       } else {
         lastFetchMs = nowMs - pollMs + 30000UL;   // retry in ~30 s
       }
     }
   }
 
-  if (g_viewChanged) {
+  if (g_viewChanged && !g_awaitWifiConfirm) {
     g_viewChanged = false;
     Serial.printf("[view] now: %s\n", viewstate::name(viewstate::current()));
-    showHeadline();   // Gate 4: redraw the actual page
+    renderCurrent();
+  }
+
+  // Full re-render the moment the clock becomes trustworthy (hero recency + 24 h
+  // stat appear, footer leaves the "Setting clock…" state).
+  bool timeOK = timekeeper::synced();
+  if ((int)timeOK != wasTimeOK) {
+    wasTimeOK = timeOK;
+    if (timeOK && firstFetch) renderCurrent();
+  }
+
+  // Tick the footer clock on each minute boundary via a no-flash partial refresh
+  // (full renders only happen on poll / view / connectivity change). Skip while a
+  // confirm prompt is up so we don't paint over it.
+  if (timeOK && firstFetch && !g_awaitWifiConfirm) {
+    struct tm lt; time_t n = timekeeper::now(); localtime_r(&n, &lt);
+    if (lt.tm_min != lastMinute) { lastMinute = lt.tm_min; epd::refreshFooter(true); }
   }
 }

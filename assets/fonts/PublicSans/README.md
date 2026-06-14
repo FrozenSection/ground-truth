@@ -18,5 +18,30 @@ Four static weights, mapped to the roles in `docs/DISPLAY-SPEC.md` §1:
 | **Regular** | detail / recency / date (13) |
 
 The full Google-Fonts download (italics, Thin/Black/Light, variable fonts) was trimmed
-out — only what the build uses is kept. Sizes to generate land with the Gate 4 display
-work.
+out — only what the build uses is kept.
+
+## Generating the glyph headers
+
+The eight bitmap headers the firmware embeds live in `src/fonts/` and are produced by
+[`tools/genfonts.sh`](../../../tools/genfonts.sh): it builds Adafruit GFX's `fontconvert`
+with **`DPI` forced to 72** (so the size argument equals the CSS-pixel em size the
+designer specced in `docs/DISPLAY-SPEC.md` §1) and renames the `…pt7b` suffix to
+`…px7b` to keep that truthful. Range is **ASCII 32–126**; the `·` separator is drawn as
+a primitive in the renderer rather than carried as a glyph.
+
+```
+brew install freetype      # one-time
+pio run                     # populates .pio/libdeps with Adafruit GFX
+tools/genfonts.sh           # regenerates src/fonts/PublicSans_*px7b.h
+```
+
+| Generated header | px (em) | Weight |
+|---|---|---|
+| `PublicSans_Bold54px7b.h`     | 54 | Bold — magnitude |
+| `PublicSans_Bold36px7b.h`     | 36 | Bold — stat numerals |
+| `PublicSans_Bold24px7b.h`     | 24 | Bold — footer clock / titles |
+| `PublicSans_Bold15px7b.h`     | 15 | Bold — place |
+| `PublicSans_Bold11px7b.h`     | 11 | Bold — badges / caps labels |
+| `PublicSans_Regular13px7b.h`  | 13 | Regular — detail / recency / date |
+| `PublicSans_Medium9px7b.h`    |  9 | Medium — axis / ring / micro labels |
+| `PublicSans_SemiBold10px7b.h` | 10 | SemiBold — location name / "Largest" |

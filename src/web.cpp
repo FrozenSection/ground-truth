@@ -54,6 +54,7 @@ function render(d){
  const s=document.getElementById("panel");s.innerHTML="";const add=e=>s.appendChild(e);const h=d.headline;
  if(h&&h.badge){add(el("circle",{cx:16,cy:13,r:4,fill:"#000"}));add(tx(25,17,h.badge.toUpperCase(),{"font-size":9,"font-weight":700,"letter-spacing":.6}));}
  for(let i=0;i<2;i++)add(el("circle",{cx:368+i*12,cy:13,r:3.5,fill:i===0?"#000":"#fff",stroke:"#000"}));
+ if(d.offline){const ox=346,oy=15;add(el("path",{d:`M ${ox-7} ${oy-3} q 7 -7 14 0 M ${ox-4} ${oy} q 4 -4 8 0`,fill:"none",stroke:"#000","stroke-width":1.1}));add(el("circle",{cx:ox,cy:oy+2,r:1.1,fill:"#000"}));add(el("line",{x1:ox-8,y1:oy-6,x2:ox+8,y2:oy+5,stroke:"#000","stroke-width":1.3}));}
  if(h){add(tx(9,66,h.mag,{"font-size":52,"font-weight":700,"letter-spacing":-2.5}));
   add(tx(150,32,esc(h.place),{"font-size":15,"font-weight":700}));
   add(tx(150,64,`depth ${h.depthKm} km · ${h.distDisp} ${h.unit} ${h.bearing}`,{"font-size":13}));
@@ -80,8 +81,11 @@ function render(d){
   add(tx(200,276,"Waiting for time sync…",{"font-size":12,"text-anchor":"middle",fill:"#555"}));
  } else {
   add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
-  add(tx(16,271,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,271,d.time.ampm,{"font-size":12,"font-weight":600}));
-  add(tx(16,291,d.time.date,{"font-size":12}));
+  add(tx(16,265,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,265,d.time.ampm,{"font-size":12,"font-weight":600}));
+  add(tx(16,280,d.time.date,{"font-size":11}));
+  // cell 1, line 3: home-pin + monitoring location (ellipsis-truncated to the cell)
+  add(el("path",{d:"M16 293 l4 -5 l4 5 M17 292 v3 h6 v-3",fill:"none",stroke:"#000","stroke-width":1}));
+  {let nm=(d.loc&&d.loc.name)||"";if(nm.length>20)nm=nm.slice(0,19)+"…";add(tx(27,295,nm,{"font-size":9.5,"font-weight":600}));}
   add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
   [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
   if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
@@ -169,6 +173,7 @@ function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
   `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Largest</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
  const c=d.cfg;f("lat").value=c.lat;f("lon").value=c.lon;f("radius").value=c.radiusKm;
  f("minmag").value=c.minMag;f("poll").value=c.pollMin;f("clock").value=c.clock24h?"24":"12";f("tz").value=c.tz;
+ f("place").value=c.name||"";
 });}
 load();
 f("findbtn").addEventListener("click",()=>{const q=f("place").value.trim();if(!q)return;
@@ -178,7 +183,7 @@ f("findbtn").addEventListener("click",()=>{const q=f("place").value.trim();if(!q
   .catch(()=>f("geomsg").textContent="Search unavailable — enter coordinates manually.");});
 f("cfg").addEventListener("submit",e=>{e.preventDefault();
  const b=new URLSearchParams({manual:"1",lat:f("lat").value,lon:f("lon").value,radius:f("radius").value,
-  minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value});
+  minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value,name:f("place").value.trim()});
  f("msg").textContent="Saving…";
  fetch("/api/config",{method:"POST",body:b}).then(r=>r.ok?r.text():r.text().then(t=>Promise.reject(t)))
   .then(()=>{f("msg").textContent="Saved ✓ — applying & refreshing…";setTimeout(load,1600);setTimeout(()=>{f("msg").textContent="Saved ✓";},4200);})
@@ -206,11 +211,16 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     JsonObject loc = doc["loc"].to<JsonObject>();
     loc["lat"] = c.lat; loc["lon"] = c.lon; loc["radiusKm"] = c.radiusKm;
     loc["minMag"] = c.minMag; loc["units"] = settings::distUnit();
+    loc["name"] = settings::locLabel();   // footer cell 1 + map context (geocode or coords)
+    // Hero "offline" flag: WiFi is the long-lived reconnecting state (the device no
+    // longer auto-opens the portal on a drop) — the mirror draws the slashed-WiFi glyph.
+    doc["offline"] = (WiFi.status() != WL_CONNECTED);
 
     JsonObject cf = doc["cfg"].to<JsonObject>();
     cf["manual"] = c.locManual; cf["lat"] = c.lat; cf["lon"] = c.lon;
     cf["radiusKm"] = c.radiusKm; cf["minMag"] = c.minMag; cf["unitsKm"] = c.unitsKm;
     cf["pollMin"] = c.pollMin; cf["clock24h"] = c.clock24h; cf["tz"] = c.tz;
+    cf["name"] = c.name;
 
     JsonObject tm = doc["time"].to<JsonObject>();
     tm["hm"]   = ok ? timekeeper::clockHM(c.clock24h) : "--:--";
@@ -298,6 +308,7 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     v = ""; P("poll", v);   if (v.length()) c.pollMin = v.toInt();
     v = ""; P("clock", v);  if (v.length()) c.clock24h = (v == "24");
     v = ""; P("tz", v);     if (v.length()) c.tz = v;
+    c.name = ""; P("name", c.name);   // geocode label (may be blank for raw coords)
     String err;
     if (!settings::validate(c, err)) { req->send(400, "text/plain", err); return; }
     settings::update(c);

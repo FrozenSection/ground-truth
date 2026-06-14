@@ -20,3 +20,5 @@ include/personalization.h
 
 # OS
 .DS_Store
+
+.fonttool/

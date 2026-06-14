@@ -4,6 +4,34 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.0] — 2026-06-14 · Gate 4 — the real e-paper layouts
+- **Page renderer** (`src/display.cpp`) — the locked designer frames, drawn on GxEPD2:
+  - **Page 1 "Map"** — √-scale radial map (rings at R⁄3 · 2R⁄3 · R, **radius-driven**
+    white-knockout labels), magnitude-sized dots with a **depth cue** (hollow <8 km /
+    filled ≥8 km), **double-ring headline**, **swarm `×n` collapse**, and the B-tight
+    stat column (24 h / 7 d counts, felt, mag range, depth key, all-time **Largest**).
+  - **Page 2 "Timeline"** — 7-day **lollipop strip chart** with M2/M3/M4 gridlines,
+    weekday letters, magnitude-scaled stalks, ringed/labeled headline, folded stat line.
+  - **Shared hero** (magnitude / 2-line place / depth+distance / recency / significance
+    badge / `●○` page dots / **offline glyph**) and the **persistent Sky Footer**
+    (clock, date, **home-pin monitoring location**, sun rise/set + daylight, **scanline-
+    filled moon**).
+  - **States** — boot splash, unified **Connect** screen (WiFi-join **QR** + both WiFi/
+    Ethernet MACs for managed-network registration), **Acquiring time**, **Reconnecting**,
+    **Stale**, **Quiet**, and the **two-step Change-WiFi confirm** (3 s hold → tap).
+- **Typography** — **Public Sans** embedded as eight on-device bitmap weights generated
+  by `tools/genfonts.sh` (Adafruit `fontconvert` patched to **DPI 72** so the size
+  argument equals the spec's CSS-px em). A UTF-8 `·`→drawn-dot shim renders the mid-dot
+  separator without carrying Latin-1 in every glyph table.
+- **Footer clock partial refresh** — the clock ticks each minute via a no-flash partial
+  refresh of the footer band; full renders happen only on poll / view / connectivity
+  change (and the instant the clock first becomes trustworthy).
+- **`loc.name` plumbed** — the geocode label is stored in NVS and shown in the footer +
+  `/api/state` (`loc.name`), with a `lat, lon` fallback for hand-entered coords; the web
+  mirror gained the footer location line and the hero offline glyph to stay a true twin.
+- *Known cosmetic deferrals (ASCII-only font): swarm count renders `xN` not `×N`, and the
+  magnitude range uses `-` not an en-dash. On-panel legibility re-shoot still pending.*
+
 ## [0.7.0] — 2026-06-13 · Review hardening, pass 2 (reliability)
 - **Trustworthy time** — HTTP `Date:`-header fallback sets the clock when NTP is blocked
   (campus, no RTC). When the clock isn't trustworthy the device + web mirror show a

@@ -14,6 +14,8 @@ namespace settings {
     int    pollMin;
     bool   clock24h;
     String tz;          // POSIX TZ string
+    String name;        // monitoring-location label from the geocode search
+                        // ("Davis, CA"); "" when coords were hand-entered
   };
 
   void begin();
@@ -27,4 +29,8 @@ namespace settings {
 
   float       toDisplayDist(float km);   // converts to the configured unit
   const char* distUnit();                // "km" or "mi"
+
+  // Monitoring-location label for the footer / mirror: the stored geocode name,
+  // or a "38.54, -121.74" fallback when coords were hand-entered (name empty).
+  String      locLabel();
 }

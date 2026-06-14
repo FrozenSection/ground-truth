@@ -21,6 +21,8 @@ namespace {
     if (isnan(c.minMag) || c.minMag < -1 || c.minMag > 9.9f) c.minMag = DEFAULT_MIN_MAG;
     if (c.pollMin < 5 || c.pollMin > 1440)               c.pollMin = DEFAULT_POLL_MIN;
     if (!settings::tzAllowed(c.tz))                       c.tz = DEFAULT_TZ;
+    c.name.trim();
+    if (c.name.length() > 48) c.name = c.name.substring(0, 48);  // NVS + footer sanity
   }
 }
 
@@ -38,6 +40,7 @@ void begin() {
   g.pollMin   = p.getInt  ("poll",   DEFAULT_POLL_MIN);
   g.clock24h  = p.getBool ("h24",    DEFAULT_CLOCK_24H);
   g.tz        = p.getString("tz",    DEFAULT_TZ);
+  g.name      = p.getString("name",  "");
   p.end();
   g.unitsKm = true;                 // km everywhere — miles dropped (rings/depth are km)
   repair(g);                        // clamp any out-of-range NVS values back to sane
@@ -79,11 +82,19 @@ void update(const Config& c) {
   p.putInt  ("poll",   g.pollMin);
   p.putBool ("h24",    g.clock24h);
   p.putString("tz",    g.tz);
+  p.putString("name",  g.name);
   p.end();
   Serial.println(F("[cfg] settings updated"));
 }
 
 float toDisplayDist(float km) { return g.unitsKm ? km : km * 0.621371f; }
 const char* distUnit() { return g.unitsKm ? "km" : "mi"; }
+
+String locLabel() {
+  if (g.name.length()) return g.name;
+  char b[24];
+  snprintf(b, sizeof(b), "%.2f, %.2f", g.lat, g.lon);   // hand-entered coords
+  return String(b);
+}
 
 }  // namespace settings
