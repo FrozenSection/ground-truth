@@ -44,7 +44,7 @@ for screens. One TTF, converted at this deliberate size scale:
 | Role | px | Weight |
 |---|---|---|
 | Magnitude (hero) | 54 | Bold |
-| Footer time | 27 | Bold |
+| Footer time | 24 | Bold |
 | Stat numerals (24 h / 7 d) | 36 | Bold |
 | Place | 15 | Bold |
 | Detail / recency / date | 13 | Regular |
@@ -88,9 +88,15 @@ Three cells split by 1 px verticals at **x=138** and **x=268**.
 
 | Cell | x range | Contents | Example |
 |---|---|---|---|
-| **Time / date** | 8–138 | Time large (~24 px), date below (~12 px) | `3:42 pm` / `Sat · Jun 13` |
-| **Sun** | 146–268 | Small sun glyph + rise/set + daylight length | `↑ 5:48a` `↓ 8:21p` `14 h 33 m` |
+| **Time / date / location** | 8–138 | Time (~24 px) + am/pm, date (~11 px), and the **monitoring location** — home-pin glyph + name (~9.5 px) | `3:42 pm` · `Sat · Jun 13` · `⌂ Davis, CA` |
+| **Sun** | 146–268 | Small sun glyph + rise/set + `Daylight:` length | `↑ 5:48a` `↓ 8:21p` `Daylight: 14h 33m` |
 | **Moon** | 276–392 | Drawn moon disc (see §8) + phase name + % | `Waxing gibbous` `73% · day 10` |
+
+- **Monitoring location** (designer round 3): a **home-pin glyph + place name** in cell 1,
+  **persistent on both pages**, visually distinct from the hero's *event* place. Cell 1 is
+  the tight one (~115 px) — **truncate long names with ellipsis**. The name comes from the
+  geocode search (firmware: store it; fall back to `lat, lon` / `Custom` for hand-entered
+  coords). The clock dropped to 24 px to make room — fine.
 
 - **12/24-hour is a user setting** (`clock_24h` in NVS) and applies to **both the clock
   and the sunrise/sunset times** (`15:42`, `↑ 5:48 / ↓ 20:33` in 24-hour mode).
@@ -111,10 +117,12 @@ Radial map (left, center ~cx 100, cy 170):
 - **Three distance rings, √ (square-root) scale** — 100 / 200 / 300 km land at
   **r ≈ 34 / 47 / 58 px**. (Linear buried near-home events at ~19 px; √ gives them
   room. This is the chosen scale.) Outer ring solid; inner two dashed.
-- **N** label + center cross at the location; ring labels are **radius-driven** (the
-  radius is user-configurable, default 300 km) — see §10.8 re: labeling the scale.
-- **Monitoring-location label** (e.g. `Davis, CA`) below/near the map — see §10.7
-  (must hold long names; distinct from the hero's event place).
+- **N** label + center cross at the location; **all three rings labeled** (`100 / 200 /
+  300 km`) with white-knockout backgrounds so they read over the rings (designer
+  round 3). **Radius-driven** — firmware computes labels = ⅓ · ⅔ · 1 × the configured
+  radius, **not** a hardcoded 300.
+- **Monitoring-location label** lives in the **footer** now (persistent on both pages)
+  — see §3.
 - **Each quake (last 7 days) = a dot** placed by true bearing + distance, **sized by
   magnitude** (≈ 2 px M2 → 5 px M4+).
 - **Headline = double ring** (r ≈ 8.5 + 6 outlines, r 4 filled center) — distinct from
@@ -176,6 +184,7 @@ designer's parametric `Hero` component.
 | Recency | 13 px | `3 hours ago` | |
 | Significance badge | filled dot + caps word, **top-left** | `● FELT NEARBY` | only when USGS `sig` high / `alert` non-null. Doubles as the `STALE` flag. |
 | Page indicator | `● ○` top-right (x≈366–386, y≈13) | filled = current page | from the `Hero` component (`page` / `pages` props). |
+| Offline indicator | slashed-WiFi glyph top-right (left of the dots) | shown when reconnecting | `Hero` `offline` prop; place text shifts left to clear it. |
 
 ---
 
@@ -290,3 +299,19 @@ from on-device review; please fold these into the final art:
 Everything else in §1–§9 is current. Still genuinely useful from you: the **Public Sans
 TTF** (the single file we embed) and a **true-size legibility pass** on the 9–10 px
 micro-labels. Deliver 1-bit PNG or vector with exact pixel coords.
+
+### Round 3 — accepted (designer "Frames" sheet, 2026-06-13)
+A full 12-frame build reference. All of §10.1–9 delivered + every state. **Accepted:**
+- **7 location** → home-pin + name in **footer cell 1** (persistent both pages). ✓
+- **8 scale key** → **all three rings labeled** with white-knockout backgrounds. ✓
+- **9 Connect screen** → one screen, both paths, **both MACs** in a "register on a managed
+  network" box. ✓
+- **States** → `Acquiring time` (footer → "Setting clock…", 24 h = `—`, hero drops the
+  recency line) and `Reconnecting` (slashed-WiFi indicator in the hero, full data
+  retained) both nailed.
+
+**Open / firmware-side (on us, not the designer):**
+- Location-name **data source** — wire the geocode result into a stored label + fallback.
+- **Ring labels radius-driven** (¼-thirds of the configured radius, not literal 300).
+- `/api/state` gains `loc.name` + a hero `offline` flag; footer clock spec → 24 px.
+- Footer cell 1 is the **width-tight spot** — confirm long names truncate cleanly.
