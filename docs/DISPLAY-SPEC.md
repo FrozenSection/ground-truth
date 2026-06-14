@@ -176,16 +176,18 @@ designer's parametric `Hero` component.
 
 ---
 
-## 7. Alternate states — **approved as designed**, one change
+## 7. Alternate states
 
-All five system states from the mockups are approved. The **one addition: a WiFi QR on
-the Setup screen** (see below).
+Your mockup states are approved. Since round 2, firmware changes added **one new state
+(Acquiring time)** and tightened the behavior of two others (Setup, Reconnecting) —
+flagged ⟵ NEW / ⟵ CHANGED below.
 
 | State | When | Conveys |
 |---|---|---|
 | **Boot splash** | first ~2 s | Project name + personal line `‹name› · UC Davis Geology` + tagline. **Name comes from gitignored `personalization.h`, never the repo** (§0). |
-| **Setup needed** | no WiFi creds | "Join WiFi network **GroundTruth-Setup**", calm/instructional — **plus a WiFi QR** (new). |
-| **Connecting / reconnecting** | WiFi dropping | Small status; keep the last good frame if there is one. |
+| **Setup needed** | first setup, a bad password, or a deliberate WiFi change | "Join WiFi network **GroundTruth-Setup**" + the WiFi QR. **⟵ CHANGED: shown only for first setup / typo'd creds / an intentional re-provision — NOT automatically when WiFi merely drops** (that's now "Reconnecting"). |
+| **Acquiring time** ⟵ **NEW** | clock not yet trustworthy (early boot, or NTP blocked before the first data fetch) | Footer replaced by a centered **`Setting clock…`**; hero keeps magnitude / place / distance but **no "X ago"**; the **24 h stat shows `—`**. Map, 7-day count, and "Largest" stay valid. Brief — clears once NTP or the HTTPS `Date` header lands. Needs a calm 1-bit treatment. |
+| **Connecting / reconnecting** | WiFi lost (router reboot, transient, or a move) | Keep the last good frame + a **small offline/`reconnecting` indicator**; the device retries STA indefinitely. **⟵ CHANGED: it never auto-opens the setup AP anymore** — so this is the long-lived state on any outage, and deserves a clear, non-alarming indicator on the normal frame. |
 | **Stale data** | fetch failing, data old | Keep last readout + filled `■ STALE DATA` stamp + `as of 2:10 pm`. |
 | **Quiet / no events** (common!) | nothing meets filters | Big `Quiet`, `Nearest M2.5+ is 410 km away`, rings still drawn with the distant event pinned just outside. Reads as the instrument at rest, not an error. |
 | **Change WiFi? (confirm)** | after a 3 s hold | Static `Change WiFi?` + current SSID + `■ Tap to confirm` / `□ Do nothing to cancel`. No animation. |
@@ -248,6 +250,14 @@ from on-device review; please fold these into the final art:
    km. No unit toggle to depict.
 4. **12/24-hour applies to the sun too** — in 24-hour mode rise/set show `5:48 / 20:33`
    (no am/pm), matching the clock.
+5. **NEW state to design — "Acquiring time"** (§7). When the clock isn't yet trustworthy
+   the footer is replaced by a centered `Setting clock…`, the hero drops its "X ago"
+   line, and the 24 h stat shows `—` (map / 7-day / Largest stay). Needs a calm 1-bit
+   treatment — it's brief but real on a slow-NTP / campus network.
+6. **"Reconnecting" is now the long-lived offline state** (§7) — the device no longer
+   auto-opens the setup AP when WiFi drops; it holds the last frame and retries. So it
+   wants a clear, non-alarming **offline / reconnecting indicator** on the normal frame,
+   and the **Setup screen is now first-setup / bad-creds / deliberate-change only**.
 
 Everything else in §1–§9 is current. Still genuinely useful from you: the **Public Sans
 TTF** (the single file we embed) and a **true-size legibility pass** on the 9–10 px
