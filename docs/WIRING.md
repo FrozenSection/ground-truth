@@ -25,22 +25,29 @@ GPIOs are the single source of truth — see `include/config.h`.
 Plain SPI W5500 (its "co-processor" = the chip's built-in TCP/IP stack), level-shifted,
 3–5 V tolerant. Shares the e-paper SPI bus and adds its own CS + MISO + RST + IRQ.
 
-| W5500 pad | Wire colour | → Feather/Friend pin | GPIO |
+"Board label" is the verbatim silkscreen on the Feather V2 (back side, where the GPIOs are
+printed). All on the **top** row except RST, which is **SDA / 22** on the **bottom** row.
+
+| W5500 pad | Wire colour | Board label | GPIO |
 |---|---|---|---|
-| **VIN** | Red | **3V** | — |
-| **GND** | Black | GND | — |
-| **SCK** | Yellow | SCK | 5 |
-| **MOSI** | Blue | MO / MOSI | 19 |
-| **MISO** | Green | MI / MISO | 21 |
-| **CS** | White | A5 | 4 |
-| **IRQ** | Yellow ‡ | A1 | 25 |
-| **RST** | Blue ‡ | SDA | 22 |
+| **VIN** | Red | `3V` | — |
+| **GND** | Black | `GND` | — |
+| **SCK** | Yellow | `SCK / 5` | 5 |
+| **MOSI** | Blue | `MOSI / 19` | 19 |
+| **MISO** | Green | `MISO / 21` | 21 |
+| **CS** | White | `A5 / 4` | 4 |
+| **IRQ** | Yellow ‡ | `A1 / DAC1` | 25 |
+| **RST** | Blue ‡ | `SDA / 22` (bottom row) | 22 |
 | 3.3V | — | *leave open* (regulator output) | — |
 
 ‡ Colour reused: **Yellow** = SCK + IRQ, **Blue** = MOSI + RST. Each pair has one wire on
 the SPI header and one on the analog/SDA side, so they're never adjacent. Only **Red
 (power)** and **Black (ground)** must be unique — a mis-traced *signal* colour just fails
 to link (debuggable), it can't damage anything.
+
+> **⚠️ Don't confuse A0 and A1.** The smart button is on **`A0 / DAC2`** (GPIO 26); the
+> W5500 **IRQ** goes to **`A1 / DAC1`** (GPIO 25) — the pad immediately to its right. That's
+> the only spot a W5500 wire sits next to the button. No other W5500 pin touches A0.
 
 ### Critical: VIN = 3 V, not 5 V
 The breakout level-shifts its SPI lines to whatever **VIN** is. Powered at 5 V it would
