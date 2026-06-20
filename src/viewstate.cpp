@@ -32,6 +32,7 @@ const char* name(uint8_t view) {
   switch (view) {
     case VIEW_MAP:      return "Map";
     case VIEW_TIMELINE: return "Timeline";
+    case VIEW_INFO:     return "Info";
     default:            return "?";
   }
 }

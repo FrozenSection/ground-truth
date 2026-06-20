@@ -5,6 +5,7 @@
 #include "seismic.h"
 #include "astro.h"
 #include "viewstate.h"
+#include <WiFi.h>      // Info page: IP / MAC / RSSI
 #include <math.h>
 #include <time.h>
 
@@ -60,6 +61,15 @@ void message(const String& title, const String& line1, const String& line2) {
 }
 
 void renderView(uint8_t view, bool timeOK, bool online, bool stale) {
+  if (view == VIEW_INFO) {
+    frame("View: Info",
+          timeOK ? (timekeeper::clockHM(settings::get().clock24h) + timekeeper::ampm(settings::get().clock24h) +
+                    "  " + timekeeper::dateStr()) : String("Setting clock..."),
+          String(MDNS_HOSTNAME) + ".local   IP " + WiFi.localIP().toString(),
+          "WiFi MAC " + WiFi.macAddress() + "   Eth (not installed)",
+          String("v") + FIRMWARE_VERSION + (online ? "   online" : "   offline"));
+    return;
+  }
   const char* vn = (view == VIEW_TIMELINE) ? "Timeline" : "Map";
   int h = seismic::headlineIndex();
   String head = (h < 0)
@@ -76,12 +86,11 @@ void renderView(uint8_t view, bool timeOK, bool online, bool stale) {
         foot, "loc: " + settings::locLabel());
 }
 
-void refreshFooter(bool timeOK) {
+void tickClock(uint8_t view, bool timeOK) {
   if (timeOK)
-    Serial.printf("[epd] footer tick: %s%s  %s\n",
+    Serial.printf("[epd] %s tick: %s%s\n", view == VIEW_INFO ? "info" : "footer",
                   timekeeper::clockHM(settings::get().clock24h).c_str(),
-                  timekeeper::ampm(settings::get().clock24h).c_str(),
-                  timekeeper::dateStr().c_str());
+                  timekeeper::ampm(settings::get().clock24h).c_str());
 }
 }  // namespace epd
 
@@ -466,6 +475,52 @@ namespace {
     txt(308, 281, mb, F_MICRO);
   }
 
+  // ---- Page 3 content: Info (big clock band, y 44–168) ----------------------
+  void drawInfoClock(bool timeOK) {
+    if (!timeOK) { txt(200, 110, "Setting clock...", F_BODY, 1); return; }
+    const auto& cfg = settings::get();
+    String hm = timekeeper::clockHM(cfg.clock24h);
+    String ap = timekeeper::ampm(cfg.clock24h);
+    int wHm = wOf(hm, F_MAG);
+    int wAp = ap.length() ? wOf(ap, F_PLACE) + 6 : 0;
+    int x0  = 200 - (wHm + wAp) / 2;
+    txt(x0, 104, hm, F_MAG);
+    if (ap.length()) txt(x0 + wHm + 6, 88, ap, F_PLACE);
+    txt(200, 130, timekeeper::dateStr(), F_BODY, 1);
+    String loc = settings::locLabel();              // home-pin + location, centered
+    int total = 12 + wOf(loc, F_LABEL);
+    int sx = 200 - total / 2;
+    homePin(sx, 152);
+    txt(sx + 12, 152, loc, F_LABEL);
+  }
+
+  // Full Info page: clock band + a small device-diagnostics block so the MAC / IP /
+  // version are reachable on-glass (e.g. to register on a managed network) with no web.
+  void drawInfoPanel(bool timeOK, bool online) {
+    pageDots(viewstate::current());                 // ● ○ ○
+    drawInfoClock(timeOK);
+    display.drawLine(20, 168, 380, 168, GxEPD_BLACK);
+
+    int lx = 24, vx = 122, y = 192;
+    const int dy = 18;
+    txt(lx, 180, "DEVICE", F_MICRO);
+    auto row = [&](const char* label, const String& val) {
+      txt(lx, y, label, F_MICRO);
+      txt(vx, y, val, F_BODY);
+      y += dy;
+    };
+    row("Web",      String(MDNS_HOSTNAME) + ".local");
+    row("IP",       online ? WiFi.localIP().toString() : String("--"));
+    row("WiFi MAC", WiFi.macAddress());
+    row("Ethernet", "not installed");
+    unsigned long up = millis() / 1000;
+    char ub[16]; snprintf(ub, sizeof(ub), "%luh %lum", up / 3600, (up % 3600) / 60);
+    row("Firmware", String("v" FIRMWARE_VERSION "  \xC2\xB7  up ") + ub);
+    String st = online ? String("online") : String("offline - reconnecting");
+    if (timeOK && seismic::hasData()) st += "  \xC2\xB7  data " + timekeeper::relative(seismic::lastFetch());
+    row("Status", st);
+  }
+
   void beginFull() { display.setRotation(0); display.setFullWindow(); }
 }  // namespace
 
@@ -482,10 +537,13 @@ void renderView(uint8_t view, bool timeOK, bool online, bool stale) {
   beginFull(); display.firstPage();
   do {
     display.fillScreen(GxEPD_WHITE);
-    drawHero(timeOK, online, stale);
-    if (view == VIEW_TIMELINE) drawTimelinePanel(timeOK);
-    else { drawMapPanel(); drawStatColumn(timeOK); }
-    drawFooter(timeOK);
+    if (view == VIEW_INFO) { drawInfoPanel(timeOK, online); }
+    else {
+      drawHero(timeOK, online, stale);
+      if (view == VIEW_TIMELINE) drawTimelinePanel(timeOK);
+      else { drawMapPanel(); drawStatColumn(timeOK); }
+      drawFooter(timeOK);
+    }
   } while (display.nextPage());
 }
 
@@ -550,10 +608,16 @@ void message(const String& title, const String& line1, const String& line2) {
   } while (display.nextPage());
 }
 
-void refreshFooter(bool timeOK) {
-  display.setPartialWindow(0, 242, 400, 58);
-  display.firstPage();
-  do { display.fillScreen(GxEPD_WHITE); drawFooter(timeOK); } while (display.nextPage());
+void tickClock(uint8_t view, bool timeOK) {
+  if (view == VIEW_INFO) {
+    display.setPartialWindow(0, 44, 400, 124);    // the big clock band
+    display.firstPage();
+    do { display.fillScreen(GxEPD_WHITE); drawInfoClock(timeOK); } while (display.nextPage());
+  } else {
+    display.setPartialWindow(0, 242, 400, 58);    // the Sky Footer band
+    display.firstPage();
+    do { display.fillScreen(GxEPD_WHITE); drawFooter(timeOK); } while (display.nextPage());
+  }
 }
 }  // namespace epd
 

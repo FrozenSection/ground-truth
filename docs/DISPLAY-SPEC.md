@@ -182,6 +182,27 @@ within-day timing). Quiet-week read: see §7.
 
 ---
 
+## 5b. Page 3 — "Info" · device · *built in firmware, designer pass welcome*
+
+A **full-screen page (no shared hero/footer)** added so the device's identity is readable
+**on-glass, with no web** — the main use is reading the **MAC** to register on a managed/
+dorm network, plus the IP to reach the web UI and the firmware version for support. The
+clock doubles as a calm at-rest face. Third stop in the tap cycle (`● ○ ○`).
+
+- **Clock band (y ~44–168):** large clock (54 px) + am/pm, centered; date (13 px) under it;
+  **home-pin + monitoring location** (10 px) under that. This band **partial-refreshes each
+  minute** (no flash), like the footer clock on the other pages.
+- **1 px divider** at y≈168.
+- **Device block (y ~180–290):** a `DEVICE` caps header, then label/value rows —
+  `Web groundtruth.local` · `IP …` · `WiFi MAC …` · `Ethernet …` (shows "not installed"
+  until the W5500 lands) · `Firmware v… · up Hh Mm` · `Status online · data N ago`.
+
+Reads from live device state (no new `/api/state` fields — the mirror reuses `host/ip/mac/
+fw/uptime/online/fetch`). **Open for the designer:** type scale + spacing of the device
+block, whether to two-column or right-align the values, and whether the clock wants a label.
+
+---
+
 ## 6. Hero band — shared pattern (y 0–90)  — **locked (`Hero` component)**
 
 The emotional anchor on both pages: the headline earthquake. Approved as the

@@ -254,6 +254,6 @@ void loop() {
   // confirm prompt is up so we don't paint over it.
   if (timeOK && firstFetch && !g_awaitWifiConfirm) {
     struct tm lt; time_t n = timekeeper::now(); localtime_r(&n, &lt);
-    if (lt.tm_min != lastMinute) { lastMinute = lt.tm_min; epd::refreshFooter(true); }
+    if (lt.tm_min != lastMinute) { lastMinute = lt.tm_min; epd::tickClock(viewstate::current(), true); }
   }
 }

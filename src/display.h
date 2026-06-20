@@ -39,8 +39,8 @@ namespace epd {
   //  stale  : true stamps "STALE DATA" (fetch failing, readout retained).
   void renderView(uint8_t view, bool timeOK, bool online, bool stale);
 
-  // Partial refresh of just the Sky Footer band (y 242–300) — ticks the clock
-  // without a full-screen black flash. Call on a minute boundary between full
-  // renders. No-op cost on a panel that already holds the rest of the image.
-  void refreshFooter(bool timeOK);
+  // Tick the clock on a minute boundary via a partial refresh (no full-screen
+  // flash). View-aware: on the Info page it refreshes the big clock band, on the
+  // Map/Timeline pages it refreshes the Sky Footer. Call between full renders.
+  void tickClock(uint8_t view, bool timeOK);
 }

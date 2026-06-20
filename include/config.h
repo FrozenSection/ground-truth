@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.8.10"  // moon illumination/age upgraded to Meeus (accurate, was mean-synodic)
+#define FIRMWARE_VERSION "0.9.0"   // third view: Info page (big clock + device diagnostics, no web needed)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -70,7 +70,8 @@
 // ---- Views (tap cycles through these; selection persists in NVS) ----
 #define VIEW_MAP        0
 #define VIEW_TIMELINE   1
-#define VIEW_COUNT      2
+#define VIEW_INFO       2   // big clock + device diagnostics (MAC/IP/version) — no web needed
+#define VIEW_COUNT      3
 
 // ---- Connectivity supervision ----
 #define WIFI_CONNECT_TIMEOUT_MS  20000UL

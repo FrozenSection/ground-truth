@@ -43,7 +43,7 @@ td.r,th.r{text-align:right}.muted{color:#9a9a93}
 <div class="top"><h1>Ground Truth <span id="ver" style="font-size:12px;color:#9a9a93;font-weight:400"></span></h1><a href="/settings">⚙ Settings</a></div>
 <div class="sub" id="sub">loading…</div>
 </div>
-<div class="pager"><button class="pg" id="pgMap">Map</button><button class="pg" id="pgTl">Timeline</button><span class="dev" id="devview"></span></div>
+<div class="pager"><button class="pg" id="pgMap">Map</button><button class="pg" id="pgTl">Timeline</button><button class="pg" id="pgInfo">Info</button><span class="dev" id="devview"></span></div>
 <div class="frame"><svg id="panel" class="panel" viewBox="0 0 400 300"></svg></div>
 <h1 style="font-size:15px;margin-top:20px">Recent events</h1>
 <table><thead><tr><th>Mag</th><th>Place</th><th class="r">Dist</th><th class="r">Depth</th><th class="r">When</th></tr></thead><tbody id="rows"></tbody></table>
@@ -57,17 +57,18 @@ function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":
 function moon(cx,cy,R,k,w){const rx=R*Math.abs(1-2*k),t=`${cx} ${cy-R}`,b=`${cx} ${cy+R}`,l=w?1:0;let m;if(w)m=k<.5?0:1;else m=k<.5?1:0;return `M ${t} A ${R} ${R} 0 0 ${l} ${b} A ${rx} ${R} 0 0 ${m} ${t} Z`;}
 // ---- page selection (mirror-local; the device's own page is driven by its button) ----
 let curPage="Map",userPicked=false,lastData=null;
+const PAGES=["Map","Timeline","Info"],PGID={Map:"pgMap",Timeline:"pgTl",Info:"pgInfo"};
 function setPage(p){curPage=p;userPicked=true;updateTabs();if(lastData)render(lastData);}
-function updateTabs(){const m=document.getElementById("pgMap"),t=document.getElementById("pgTl"),dv=document.getElementById("devview");
- if(m)m.classList.toggle("on",curPage==="Map");if(t)t.classList.toggle("on",curPage==="Timeline");
- if(dv)dv.textContent=lastData?("● Device is showing: "+lastData.view):"";}
-document.getElementById("pgMap").addEventListener("click",()=>setPage("Map"));
-document.getElementById("pgTl").addEventListener("click",()=>setPage("Timeline"));
+function updateTabs(){PAGES.forEach(p=>{const b=document.getElementById(PGID[p]);if(b)b.classList.toggle("on",curPage===p);});
+ const dv=document.getElementById("devview");if(dv)dv.textContent=lastData?("● Device is showing: "+lastData.view):"";}
+PAGES.forEach(p=>document.getElementById(PGID[p]).addEventListener("click",()=>setPage(p)));
+// clickable ●○○ page dots, shared by every page
+function pageDots(add){PAGES.forEach((p,i)=>{const dot=el("circle",{cx:368+i*12,cy:13,r:3.5,fill:p===curPage?"#000":"#fff",stroke:"#000"});dot.style.cursor="pointer";dot.addEventListener("click",()=>setPage(p));add(dot);});}
 
 // ---- shared hero (page dots reflect the page you're VIEWING and are clickable) ----
 function drawHero(add,d){const h=d.headline;
  if(h&&h.badge){add(el("circle",{cx:16,cy:13,r:4,fill:"#000"}));add(tx(25,17,h.badge.toUpperCase(),{"font-size":9,"font-weight":700,"letter-spacing":.6}));}
- for(let i=0;i<2;i++){const p=i===0?"Map":"Timeline",dot=el("circle",{cx:368+i*12,cy:13,r:3.5,fill:p===curPage?"#000":"#fff",stroke:"#000"});dot.style.cursor="pointer";dot.addEventListener("click",()=>setPage(p));add(dot);}
+ pageDots(add);
  if(d.offline){const ox=346,oy=15;add(el("path",{d:`M ${ox-7} ${oy-3} q 7 -7 14 0 M ${ox-4} ${oy} q 4 -4 8 0`,fill:"none",stroke:"#000","stroke-width":1.1}));add(el("circle",{cx:ox,cy:oy+2,r:1.1,fill:"#000"}));add(el("line",{x1:ox-8,y1:oy-6,x2:ox+8,y2:oy+5,stroke:"#000","stroke-width":1.3}));}
  if(h){add(tx(9,66,h.mag,{"font-size":52,"font-weight":700,"letter-spacing":-2.5}));
   add(tx(150,32,esc(h.place),{"font-size":15,"font-weight":700}));
@@ -125,7 +126,23 @@ function drawFooter(add,d){
  else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
  if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#fff"}));add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}}
 
+// ---- Page 3: Info (big clock + device diagnostics) ----
+function drawInfo(add,d){
+ pageDots(add);
+ if(d.timeOK){
+  add(tx(200,104,d.time.hm+(d.time.ampm?" "+d.time.ampm:""),{"font-size":52,"font-weight":700,"text-anchor":"middle","letter-spacing":-2}));
+  add(tx(200,130,d.time.date,{"font-size":13,"text-anchor":"middle"}));
+  add(tx(200,152,"⌂ "+((d.loc&&d.loc.name)||""),{"font-size":10,"font-weight":600,"text-anchor":"middle"}));
+ } else add(tx(200,110,"Waiting for time sync…",{"font-size":13,"text-anchor":"middle",fill:"#555"}));
+ add(el("line",{x1:20,y1:168,x2:380,y2:168,stroke:"#000"}));
+ const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
+ const rows=[["Web",d.host+".local"],["IP",d.online?d.ip:"--"],["WiFi MAC",d.mac],["Ethernet","not installed"],
+  ["Firmware","v"+d.fw+"  ·  up "+up],["Status",(d.online?"online":"offline")+(d.fetch&&d.timeOK?"  ·  data "+d.fetch.rel:"")]];
+ add(tx(24,180,"DEVICE",{"font-size":9,"font-weight":700,"letter-spacing":.6}));
+ let y=192;rows.forEach(([l,v])=>{add(tx(24,y,l,{"font-size":9,"font-weight":700,fill:"#666"}));add(tx(122,y,esc(v),{"font-size":13}));y+=18;});}
+
 function render(d){const s=document.getElementById("panel");s.innerHTML="";const add=e=>s.appendChild(e);
+ if(curPage==="Info"){drawInfo(add,d);return;}
  drawHero(add,d);(curPage==="Timeline"?drawTimeline:drawMap)(add,d);drawFooter(add,d);}
 function tick(){fetch("/api/state").then(r=>r.json()).then(d=>{
  document.getElementById("ver").textContent="v"+d.fw;

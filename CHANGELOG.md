@@ -4,6 +4,16 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.0] — 2026-06-20 · Third view: Info page
+- **New "Info" page** (third stop in the tap cycle, `● ○ ○`): a full-screen layout with a
+  big clock + date + monitoring location up top, and a **device block** below — web
+  address, IP, **WiFi MAC**, Ethernet ("not installed" until the W5500), firmware +
+  uptime, and online/data status. The point is on-glass access to the **MAC/IP/version
+  with no web** — e.g. to register on a managed/dorm network. The clock band
+  partial-refreshes each minute like the footer (`refreshFooter` generalized to a
+  view-aware `tickClock`). Mirrored on the web (third "Info" tab); reuses existing
+  `/api/state` fields. Spec §5b added for the designer.
+
 ## [0.8.10] — 2026-06-20 · Accurate moon illumination + age
 - **Moon illumination/age upgraded to Meeus** (Astronomical Algorithms ch. 48). The old
   mean-synodic model assumed a uniform cycle rate and ignored the Sun/Moon orbital
