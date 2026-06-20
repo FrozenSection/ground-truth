@@ -28,8 +28,25 @@ more than configurability.
   **display mirror** + **settings/location editor** + authenticated **OTA** at `groundtruth.local`
 
 See **[docs/ROADMAP.md](docs/ROADMAP.md)** for gate progress, decisions, and the
-running feature list. (We work conversationally from here — the roadmap is the only
-living doc.)
+running feature list, and **[docs/DESIGN-HANDOFF.md](docs/DESIGN-HANDOFF.md)** for the
+display spec.
+
+## The headline — how the big number is chosen
+The hero magnitude is a **hybrid**, not a single fixed window:
+1. the most *significant* quake in the **last 24 hours**, if there is one — keeps the
+   display current with today's activity;
+2. otherwise, the most significant over the **last 7 days** — so a calm day still shows
+   the region's biggest recent quake instead of a blank hero.
+
+"Significant" ranks by USGS **significance** (magnitude **plus** felt reports / impact),
+with magnitude then recency as tiebreakers — almost always the largest quake, but
+occasionally a strongly-felt nearer one outranks a bigger remote one. The hero's
+"… ago" line tells you which window the shown event came from (e.g. "2 hours ago" = a
+fresh 24 h pick; "4 days ago" = the 7-day fallback). The map/timeline counts beneath it
+are plain totals (24 h and 7 d), and **Largest** is the all-time maximum since setup.
+
+> **Plain-language version (for a setup card / PDF):** *the big number is the most
+> notable earthquake nearby in the last 24 hours — or the past week, if today was quiet.*
 
 ## Build
 ```sh
@@ -42,12 +59,12 @@ After the first USB flash, updates can go **over WiFi** via ElegantOTA at
 `groundtruth.local/update` (upload `.pio/build/<env>/firmware.bin`).
 
 ## Status
-**v0.6.1 — data + web layers complete; e-paper panel layouts pending hardware.**
-Working today: WPA2 provisioning + auto-AP, smart-button view/reprovision, the live
-USGS pipeline (distance/bearing, hybrid headline, 24 h/7 d stats, swarm clustering,
-all-time largest), NTP time + sunrise/sunset + moon phase, and the `groundtruth.local`
-web mirror, settings/location editor, and authenticated OTA. **Next (Gate 4):** render
-the locked layouts on the GDEY042T81 — needs the panel in hand. See the roadmap.
+**v0.9.x — display complete and hardware-verified; polishing before the hardening pass.**
+Three on-panel views (Map · Timeline · Info) render in Public Sans on the GDEY042T81, the
+full USGS pipeline + NTP/astro + `groundtruth.local` web mirror / settings / OTA all work,
+and the layout has been refined across many on-device rounds. **Remaining:** Gate 1b (W5500
+wired Ethernet, hardware pending) and the Gate 6 hardening tail (watchdog, soak test,
+recovery card) → 1.0.0. See the roadmap.
 
 ## Colophon
 Designed and built with **[Claude Code](https://www.anthropic.com/claude-code)** as

@@ -152,6 +152,12 @@ The two detail lines sit **tight under the place** (no extra blank line). **No
 significance / "FELT" badge** — a far-away felt flag wasn't meaningful and read as orphaned;
 the felt *count* still lives in the stat column.
 
+**Which quake is the headline (firmware logic, not a visual element):** a hybrid — the most
+*significant* quake in the **last 24 h**, or if today was quiet, the most significant over
+the **last 7 days**. ("Significant" = USGS significance: magnitude + felt/impact, tiebroken
+by magnitude then recency.) The recency line is the only on-screen hint of which window it
+came from; the rule itself is documented in the README rather than called out on the panel.
+
 **Quiet state** (no events, common): big `Quiet` (54 px) at (9, 64); `No events in range`
 (15 px) + date set to the right of the word; rings still drawn. Reads as the instrument at
 rest, not an error.
