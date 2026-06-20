@@ -57,27 +57,26 @@ function save(){var ssid=document.getElementById('manual').value||document.getEl
 refresh();
 </script></body></html>)HTML";
 
-  void sendScanJson(AsyncWebServerRequest* req) {
-    int n = WiFi.scanComplete();
-    JsonDocument doc;
-    if (n == WIFI_SCAN_FAILED) {
-      WiFi.scanNetworks(true, true);   // re-kick so the list self-heals
-      doc["scanning"] = true;
-    } else if (n == WIFI_SCAN_RUNNING) {
-      doc["scanning"] = true;
-    } else {
-      doc["scanning"] = false;
-      JsonArray arr = doc["networks"].to<JsonArray>();
-      for (int i = 0; i < n && i < 20; i++) {
-        JsonObject o = arr.add<JsonObject>();
-        o["ssid"] = WiFi.SSID(i);
-        o["rssi"] = WiFi.RSSI(i);
-        o["enc"]  = (WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
-      }
+  // Single source of the AP-raise sequence — used by BOTH the first-run captive portal and
+  // runtime Config mode, so the two can't drift. Quiesces a re-associating STA first: a
+  // failed/looping connect aborts every scan -> the SSID picker spins "scanning..." forever
+  // (only when not already connected, so Config mode over a live WiFi link stays connected).
+  void raiseSetupAP() {
+    IPAddress apIP(192, 168, 4, 1);
+    if (WiFi.status() != WL_CONNECTED) {
+      WiFi.setAutoReconnect(false);
+      WiFi.disconnect(true);
+      delay(150);
     }
-    AsyncResponseStream* res = req->beginResponseStream("application/json");
-    serializeJson(doc, *res);
-    req->send(res);
+    WiFi.mode(WIFI_AP_STA);                          // AP serves the page; STA scans
+    WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+    WiFi.softAP(AP_NAME, AP_PASS);                   // WPA2-protected setup network
+    dns.start(53, "*", apIP);                        // captive: everything resolves to the device
+    WiFi.scanNetworks(true, true);                   // async SSID scan for the picker
+  }
+
+  void sendScanJson(AsyncWebServerRequest* req) {
+    req->send(200, "application/json", provisioning::scanJson());   // shared scan impl
   }
 
   void registerPortalRoutes() {
@@ -133,19 +132,8 @@ refresh();
   }
 
   void runPortalBlocking() {
-    IPAddress apIP(192, 168, 4, 1);
     Serial.println("[wifi] starting WPA2 captive portal (AP: " AP_NAME ")");
-    // Quiesce the STA first: a failed connect leaves auto-reconnect re-associating
-    // in the background, and every association aborts the scan -> "scanning..."
-    // forever.
-    WiFi.setAutoReconnect(false);
-    WiFi.disconnect(true);
-    delay(150);
-    WiFi.mode(WIFI_AP_STA);                          // AP serves the page; STA scans
-    WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-    WiFi.softAP(AP_NAME, AP_PASS);                   // WPA2-protected setup network
-    WiFi.scanNetworks(true, true);
-    dns.start(53, "*", apIP);
+    raiseSetupAP();                                  // AP + captive DNS + scan (shared)
     registerPortalRoutes();
     portalServer.begin();
     Serial.println("[wifi] portal ready at http://" AP_IP_STR
@@ -251,12 +239,8 @@ bool ssidVisible(const String& ssid) {
 
 // ---- Runtime Config mode (Gate 1c) ----
 void startConfigAP() {
-  IPAddress apIP(192, 168, 4, 1);
-  WiFi.mode(WIFI_AP_STA);                       // AP serves config; STA keeps scan/connect available
-  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP(AP_NAME, AP_PASS);                // WPA2-protected
-  dns.start(53, "*", apIP);                     // captive: everything resolves to the device
-  WiFi.scanNetworks(true, true);               // kick an async scan so the SSID list is ready
+  raiseSetupAP();   // shared with the first-run portal — incl. the STA quiesce that keeps the
+                    // SSID scan from spinning forever when WiFi creds are wrong/out of range
   Serial.println(F("[cfg-ap] up -> join " AP_NAME " / " AP_PASS "  at http://" AP_IP_STR));
 }
 

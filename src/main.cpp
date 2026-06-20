@@ -279,6 +279,7 @@ void loop() {
   if (online && netUp) {
     unsigned long pollMs = (unsigned long)settings::get().pollMin * 60000UL;
     if (!firstFetch || forceFetch || nowMs - lastFetchMs >= pollMs) {
+      health::feed();   // reset the WDT clock right before the ~15-17 s blocking HTTPS fetch
       if (seismic::fetch()) {
         lastFetchMs = nowMs; firstFetch = true; forceFetch = false;
         printSummary();

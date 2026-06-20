@@ -53,11 +53,6 @@ void connectScreen(const String& apName, const String& apPass,
         "Ethernet MAC: " + (ethMac.length() ? ethMac : String("(board not installed)")));
 }
 
-void changeWifiConfirm(const String& ssid) {
-  frame("Change WiFi?", "Current: " + ssid,
-        "[#] Tap to confirm", "[ ] Do nothing to cancel");
-}
-
 void message(const String& title, const String& line1, const String& line2) {
   frame(title, line1, line2);
 }
@@ -632,17 +627,6 @@ void connectScreen(const String& apName, const String& apPass,
     txt(216, 198, ethMac.length() ? ethMac : String("(board not installed)"), F_BODY);
 
     txt(200, 232, "Connects on whichever link comes up first", F_MICRO, 1);
-  } while (display.nextPage());
-}
-
-void changeWifiConfirm(const String& ssid) {
-  beginFull(); display.firstPage();
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    txt(200, 90, "Change WiFi?", F_TIME, 1);
-    txt(200, 128, String("Current network: ") + ssid, F_BODY, 1);
-    display.fillRect(96, 156, 11, 11, GxEPD_BLACK);  txt(116, 166, "Tap to confirm", F_BODY);
-    display.drawRect(96, 182, 11, 11, GxEPD_BLACK);  txt(116, 192, "Do nothing to cancel", F_BODY);
   } while (display.nextPage());
 }
 

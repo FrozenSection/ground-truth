@@ -24,9 +24,6 @@ namespace epd {
                      const String& wifiMac, const String& ethMac,
                      bool error = false);
 
-  // Two-step WiFi-change confirm (after a 3 s button hold).
-  void changeWifiConfirm(const String& ssid);
-
   // Generic centered notice (reboot / wifi-reset / transient connecting).
   void message(const String& title, const String& line1 = "",
                const String& line2 = "");
