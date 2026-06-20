@@ -33,4 +33,16 @@ namespace provisioning {
   String storedSsid();           // saved SSID ("" if none)
   String staMac();               // station MAC (the one campus networks register)
   bool   ssidVisible(const String& ssid);   // quick sync scan; is `ssid` in range?
+
+  // ---- Runtime Config mode (Gate 1c) — non-blocking, unlike openPortal() ----
+  // Raise the GroundTruth-Setup AP (AP_STA) + captive DNS *alongside* the running web
+  // server, so a phone joins it and reaches the full settings page at 192.168.4.1. The
+  // device keeps running (display + Ethernet) the whole time. Does NOT change the WiFi
+  // on/off setting — the AP radio is temporary; mode is restored on stop.
+  void   startConfigAP();
+  void   stopConfigAP();         // drop AP + DNS, restore STA/OFF per the WiFi setting
+  void   configAPLoop();         // pump the captive DNS — call from the main loop while active
+
+  void   saveCreds(const String& ssid, const String& pass);  // store to NVS (no reboot)
+  String scanJson();             // async WiFi-scan status as JSON (for the settings page)
 }

@@ -14,9 +14,16 @@ more than configurability.
 - Adafruit **ESP32 Feather V2** (ESP32-PICO-MINI-02, 8 MB flash)
 - **eInk Feather Friend** + FPC cable
 - 4.2" **GDEY042T81** e-paper, 400×300 mono
-- Gebildet 7 mm panel-mount momentary **smart button** on a free GPIO (tap = switch
-  view · hold ≈ 3 s = re-provision WiFi). No EN reset — watchdog + power-cycle cover it.
+- **Adafruit WIZ5500** wired-Ethernet breakout (#6348) on the shared SPI bus — dual-connect
+  (WiFi *or* Ethernet) so it works on home WiFi or a managed/dorm network (Ethernet + MAC
+  registration). See [docs/WIRING.md](docs/WIRING.md).
+- Gebildet 7 mm panel-mount momentary **smart button** on a free GPIO (tap = switch view ·
+  hold ≈ 3 s = **Config mode**: the device raises its own AP so the full settings page is
+  reachable at `192.168.4.1` from a phone). No EN reset — watchdog + power-cycle cover it.
 - Continuous USB/mains power; **no RTC, no GPS** (NTP for time)
+
+> **Living with it / moving it to a dorm:** see [docs/USAGE.md](docs/USAGE.md) — the button,
+> reaching settings anywhere via Config mode, and registering the device on campus Ethernet.
 
 ## Firmware
 - **PlatformIO**, Arduino framework, `adafruit_feather_esp32_v2`
@@ -59,12 +66,13 @@ After the first USB flash, updates can go **over WiFi** via ElegantOTA at
 `groundtruth.local/update` (upload `.pio/build/<env>/firmware.bin`).
 
 ## Status
-**v0.9.x — display complete and hardware-verified; polishing before the hardening pass.**
-Three on-panel views (Map · Timeline · Info) render in Public Sans on the GDEY042T81, the
-full USGS pipeline + NTP/astro + `groundtruth.local` web mirror / settings / OTA all work,
-and the layout has been refined across many on-device rounds. **Remaining:** Gate 1b (W5500
-wired Ethernet, hardware pending) and the Gate 6 hardening tail (watchdog, soak test,
-recovery card) → 1.0.0. See the roadmap.
+**v0.11.0 — display + connectivity complete and hardware-verified; on to the hardening pass.**
+Three on-panel views (Map · Timeline · Info) render in Public Sans on the GDEY042T81; the full
+USGS pipeline + NTP/astro + `groundtruth.local` web mirror / settings / OTA all work; and
+**dual connectivity is live** — WiFi *and* wired Ethernet (W5500), with a button-hold **Config
+mode** that makes settings reachable on any network and a WiFi on/off toggle for dorm use.
+**Remaining:** the Gate 6 hardening tail (watchdog, soak test, recovery card) → 1.0.0. See the
+roadmap.
 
 ## Colophon
 Designed and built with **[Claude Code](https://www.anthropic.com/claude-code)** as

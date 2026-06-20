@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.10.3"  // Gate 1b: Ethernet hardened (ETH-aware fetch/MAC/IP, capped bootstrap query)
+#define FIRMWARE_VERSION "0.11.0"  // Gate 1c: Config mode (AP-reachable settings) + WiFi on/off toggle
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -62,10 +62,10 @@
 
 // ---- Smart button (single panel-mount momentary) ----
 // GPIO 26 (Feather A0 position) -> button -> GND, INPUT_PULLUP (pressed = LOW).
-// 26 is NOT a strapping pin (safe at boot). Tap = next view; hold = re-provision.
+// 26 is NOT a strapping pin (safe at boot). Tap = next view; 3 s hold = Config mode.
 #define BUTTON_PIN          26
 #define BUTTON_DEBOUNCE_MS  50
-#define BUTTON_HOLD_MS      3000   // hold >= this -> arm WiFi re-provision
+#define BUTTON_HOLD_MS      3000   // hold >= this -> open Config mode (AP-reachable settings)
 
 // ---- W5500 wired Ethernet (Gate 1b) — shares the e-paper SPI bus (SCK5/MISO21/MOSI19),
 // adds its own control pins. Full wiring + wire colours in docs/WIRING.md. ----
@@ -82,11 +82,11 @@
 
 // ---- Connectivity supervision ----
 #define WIFI_CONNECT_TIMEOUT_MS  20000UL
-// Sustained offline beyond this (with the stored SSID absent / repeated failures)
-// re-opens the captive portal unattended — the "dorm move" recovery.
-#define AUTO_AP_AFTER_MS         (5UL * 60 * 1000)
 #define RECONNECT_EVERY_MS       30000UL
 #define TICK_INTERVAL_MS         1000UL
+// Config mode (button-hold AP) auto-closes after this idle window so the device can't be
+// left broadcasting its setup AP indefinitely.
+#define CONFIG_AP_TIMEOUT_MS     (10UL * 60 * 1000)
 
 // ---- Time ----
 #define NTP_SERVER_1   "pool.ntp.org"

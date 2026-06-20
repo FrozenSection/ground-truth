@@ -39,6 +39,7 @@ void begin() {
   g.unitsKm   = p.getBool ("km",     String(DEFAULT_UNITS) == "km");
   g.pollMin   = p.getInt  ("poll",   DEFAULT_POLL_MIN);
   g.clock24h  = p.getBool ("h24",    DEFAULT_CLOCK_24H);
+  g.wifiEnabled = p.getBool("wifi_on", true);   // default on; flipped off for dorm Ethernet-only
   g.tz        = p.getString("tz",    DEFAULT_TZ);
   g.name      = p.getString("name",  "");
   p.end();
@@ -81,6 +82,7 @@ void update(const Config& c) {
   p.putBool ("km",     g.unitsKm);
   p.putInt  ("poll",   g.pollMin);
   p.putBool ("h24",    g.clock24h);
+  p.putBool ("wifi_on", g.wifiEnabled);
   p.putString("tz",    g.tz);
   p.putString("name",  g.name);
   p.end();

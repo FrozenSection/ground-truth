@@ -1,5 +1,6 @@
 #include "provisioning.h"
 #include "config.h"
+#include "settings.h"
 
 #include <WiFi.h>
 #include <esp_mac.h>
@@ -246,6 +247,54 @@ bool ssidVisible(const String& ssid) {
   }
   WiFi.scanDelete();
   return found;
+}
+
+// ---- Runtime Config mode (Gate 1c) ----
+void startConfigAP() {
+  IPAddress apIP(192, 168, 4, 1);
+  WiFi.mode(WIFI_AP_STA);                       // AP serves config; STA keeps scan/connect available
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.softAP(AP_NAME, AP_PASS);                // WPA2-protected
+  dns.start(53, "*", apIP);                     // captive: everything resolves to the device
+  WiFi.scanNetworks(true, true);               // kick an async scan so the SSID list is ready
+  Serial.println(F("[cfg-ap] up -> join " AP_NAME " / " AP_PASS "  at http://" AP_IP_STR));
+}
+
+void stopConfigAP() {
+  dns.stop();
+  WiFi.softAPdisconnect(true);                  // drop the AP
+  if (settings::get().wifiEnabled) { WiFi.mode(WIFI_STA); beginStored(); }  // resume home WiFi
+  else                              WiFi.mode(WIFI_OFF);                     // back to Ethernet-only
+  Serial.println(F("[cfg-ap] down"));
+}
+
+void configAPLoop() { dns.processNextRequest(); }
+
+void saveCreds(const String& ssid, const String& pass) {
+  prefs.begin("wifi", false);
+  prefs.putString("ssid", ssid);
+  prefs.putString("pass", pass);
+  prefs.putBool("fresh", true);                 // verify on next boot (typo -> portal+error)
+  prefs.end();
+  Serial.printf("[wifi] creds saved for \"%s\"\n", ssid.c_str());
+}
+
+String scanJson() {
+  int n = WiFi.scanComplete();
+  JsonDocument doc;
+  if (n == WIFI_SCAN_FAILED) { WiFi.scanNetworks(true, true); doc["scanning"] = true; }
+  else if (n == WIFI_SCAN_RUNNING) { doc["scanning"] = true; }
+  else {
+    doc["scanning"] = false;
+    JsonArray arr = doc["networks"].to<JsonArray>();
+    for (int i = 0; i < n && i < 20; i++) {
+      JsonObject o = arr.add<JsonObject>();
+      o["ssid"] = WiFi.SSID(i);
+      o["rssi"] = WiFi.RSSI(i);
+      o["enc"]  = (WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
+    }
+  }
+  String out; serializeJson(doc, out); return out;
 }
 
 }  // namespace provisioning

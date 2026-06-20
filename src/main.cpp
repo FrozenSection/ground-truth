@@ -25,10 +25,11 @@
 // /api/state (web task).
 std::mutex g_stateMutex;
 
-static volatile bool g_wifiResetPending = false;
-static volatile bool g_viewChanged      = false;
-static bool          g_awaitWifiConfirm = false;   // 3 s hold armed the Change-WiFi confirm
-static unsigned long g_confirmUntil     = 0;       // auto-cancel deadline
+static volatile bool g_viewChanged          = false;
+static volatile bool g_enterConfigRequested = false;   // 3 s hold -> enter Config mode
+static volatile bool g_exitConfigRequested  = false;   // tap while in Config mode -> exit
+static bool          g_configMode           = false;   // AP up; full settings reachable at 192.168.4.1
+static unsigned long g_configEnteredAt      = 0;
 
 // Render the active view from live module state. timeOK gates time-derived fields
 // (the "Acquiring time" treatment); online drives the reconnecting glyph; stale
@@ -46,8 +47,9 @@ static void renderCurrent() {
   epd::renderView(viewstate::current(), timeOK, online, stale);
 }
 
-// Smart button (GPIO BUTTON_PIN -> GND): tap = next view; 3 s hold = arm a
-// Change-WiFi confirm (a second tap confirms, inaction cancels — DISPLAY-SPEC §7).
+// Smart button (GPIO BUTTON_PIN -> GND): tap = next view; 3 s hold = open Config mode
+// (raises the AP so the full settings page is reachable at 192.168.4.1). In Config mode
+// a tap exits back to the live view.
 static void pollButton() {
   static bool          wasDown   = false;
   static unsigned long downAt    = 0;
@@ -57,18 +59,14 @@ static void pollButton() {
   if (down && !wasDown) { downAt = ms; longFired = false; }
   if (down && !longFired && ms - downAt >= BUTTON_HOLD_MS) {
     longFired = true;
-    g_awaitWifiConfirm = true; g_confirmUntil = ms + 8000;
-    epd::changeWifiConfirm(provisioning::storedSsid());
-    Serial.println(F("[btn] hold -> Change-WiFi confirm (tap to confirm, wait to cancel)"));
+    if (!g_configMode) {                            // 3 s hold -> open Config mode (raise AP)
+      g_enterConfigRequested = true;
+      Serial.println(F("[btn] hold -> Config mode"));
+    }
   }
   if (!down && wasDown && !longFired && ms - downAt >= BUTTON_DEBOUNCE_MS) {
-    if (g_awaitWifiConfirm) {                       // confirming the WiFi change
-      g_awaitWifiConfirm = false;
-      g_wifiResetPending = true;
-    } else {                                        // normal tap = cycle view
-      viewstate::next();
-      g_viewChanged = true;
-    }
+    if (g_configMode) g_exitConfigRequested = true; // tap exits Config mode
+    else { viewstate::next(); g_viewChanged = true; }  // tap cycles the view
   }
   wasDown = down;
 }
@@ -95,41 +93,44 @@ void setup() {
   epd::begin();
   epd::splash();
   neteth::begin();          // W5500 on the shared SPI bus (link/DHCP come async)
-  WiFi.mode(WIFI_STA);      // bring up the STA interface so its MAC is readable for the
-                            // Connect screen (3.x returns 00:00 before the radio starts)
-  Serial.printf("[net] station MAC: %s | eth MAC: %s\n",
-                provisioning::staMac().c_str(), neteth::mac().c_str());
+  bool wifiOn = settings::get().wifiEnabled;
+  if (wifiOn) WiFi.mode(WIFI_STA);   // STA up so we can connect (MAC is read from efuse regardless)
+  else        WiFi.mode(WIFI_OFF);   // dorm good-citizen: Ethernet-only, radio off (no probing)
+  Serial.printf("[net] station MAC: %s | eth MAC: %s | wifi=%s\n",
+                provisioning::staMac().c_str(), neteth::mac().c_str(), wifiOn ? "on" : "off");
 
-  if (!provisioning::hasCreds()) {
-    // Fresh device: show the unified Connect screen (both MACs + QR). Proceed on EITHER
-    // path — wait briefly for a wired Ethernet link before blocking on the WiFi captive
-    // portal, so a plug-in-Ethernet setup (dorm) needs no phone at all.
-    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac());
-    unsigned long t0 = millis();
-    while (!neteth::up() && millis() - t0 < 15000UL) { delay(200); }
-    if (neteth::up()) {
-      Serial.println(F("[net] Ethernet up at setup -> skipping WiFi portal"));
-    } else {
-      provisioning::openPortal();               // no Ethernet -> WiFi portal (blocks; reboots on save)
+  bool online = false;
+  if (wifiOn) {
+    if (!provisioning::hasCreds()) {
+      // Fresh device: show the unified Connect screen (both MACs + QR). Proceed on EITHER
+      // path — wait briefly for a wired Ethernet link before blocking on the WiFi captive
+      // portal, so a plug-in-Ethernet setup (dorm) needs no phone at all.
+      epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac());
+      unsigned long t0 = millis();
+      while (!neteth::up() && millis() - t0 < 15000UL) { delay(200); }
+      if (neteth::up()) Serial.println(F("[net] Ethernet up at setup -> skipping WiFi portal"));
+      else              provisioning::openPortal();   // no Ethernet -> WiFi portal (blocks; reboots on save)
     }
-  }
-
-  epd::message("Connecting", "joining WiFi...");
-  bool online = provisioning::tryConnect();
-  if (online) {
-    provisioning::clearFresh();
-  } else if (provisioning::freshlyProvisioned()) {
-    // Creds entered moments ago don't connect (typo / wrong network) -> portal+error.
-    Serial.println(F("[wifi] fresh creds failed -> portal"));
-    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac(), /*error=*/true);
-    provisioning::openPortal();
+    epd::message("Connecting", "joining WiFi...");
+    online = provisioning::tryConnect();
+    if (online) {
+      provisioning::clearFresh();
+    } else if (provisioning::freshlyProvisioned()) {
+      // Creds entered moments ago don't connect (typo / wrong network) -> portal+error.
+      Serial.println(F("[wifi] fresh creds failed -> portal"));
+      epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac(), /*error=*/true);
+      provisioning::openPortal();
+    } else {
+      // Previously-good creds not connecting (router down, transient, or moved). Do NOT
+      // auto-open a blocking portal — keep retrying STA in loop() and retain the last frame.
+      // A real move is re-provisioned deliberately (button hold = Config mode), so a managed-
+      // network maintenance window can't strand the device in AP mode.
+      Serial.println(F("[wifi] not connecting now -> keep retrying in loop"));
+    }
   } else {
-    // Previously-good creds not connecting (router down, transient, or moved). Do NOT
-    // auto-open a blocking portal — keep retrying STA in loop() and retain the last
-    // frame. A real move is re-provisioned deliberately (button hold / web Change-WiFi),
-    // so a managed-network maintenance window can't strand the device in AP mode.
-    Serial.println(F("[wifi] not connecting now -> keep retrying in loop"));
+    Serial.println(F("[wifi] disabled in settings -> Ethernet-only"));
   }
+  online = online || neteth::up();
 
   epd::message("Ground Truth", online ? "syncing time + data..." : "offline - reconnecting");
 
@@ -138,6 +139,10 @@ void setup() {
   // internet is the W5500. The reconnect supervisor is a no-op with the radio off.
   Serial.println(F("[TEST] WiFi radio OFF -> Ethernet-only path"));
   WiFi.mode(WIFI_OFF);
+#endif
+#ifdef CONFIG_MODE_TEST
+  Serial.println(F("[TEST] auto-entering Config mode at boot"));
+  g_enterConfigRequested = true;
 #endif
 }
 
@@ -158,15 +163,7 @@ void loop() {
 
   pollButton();
 
-  // Auto-cancel an unconfirmed Change-WiFi prompt: redraw the live view.
-  if (g_awaitWifiConfirm && (long)(millis() - g_confirmUntil) >= 0) {
-    g_awaitWifiConfirm = false;
-    Serial.println(F("[btn] Change-WiFi confirm timed out -> cancelled"));
-    renderCurrent();
-  }
-
-  if (g_wifiResetPending || web::consumeWifiReset()) {
-    g_wifiResetPending = false;
+  if (web::consumeWifiReset()) {
     Serial.println(F("[main] WiFi reset -> clearing creds, rebooting to portal"));
     epd::message("WiFi reset", "rebooting to setup...");
     provisioning::forgetWiFi();
@@ -178,6 +175,33 @@ void loop() {
     epd::message("Rebooting", "applying settings...");
     delay(400);
     ESP.restart();
+  }
+
+  // Config mode (button-hold): raise the device's own AP so the full settings page is
+  // reachable at http://192.168.4.1 from a phone — works on any venue network, since a
+  // direct join bypasses dorm client-isolation. Non-blocking; reuses the running server.
+  if (g_enterConfigRequested && !g_configMode) {
+    g_enterConfigRequested = false;
+    if (!netUp) { timekeeper::begin(settings::get().tz); web::begin(); netUp = true; }
+    web::setConfigMode(true);
+    provisioning::startConfigAP();
+    g_configMode = true;
+    g_configEnteredAt = millis();
+    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac());
+  }
+  if (g_configMode) {
+    provisioning::configAPLoop();           // pump captive DNS
+    if (netUp) web::loop();                 // serve the AP client (+ OTA housekeeping)
+    if (g_exitConfigRequested || millis() - g_configEnteredAt > CONFIG_AP_TIMEOUT_MS) {
+      g_exitConfigRequested = false;
+      provisioning::stopConfigAP();
+      web::setConfigMode(false);
+      g_configMode = false;
+      Serial.println(F("[cfg] Config mode OFF -> resume"));
+      renderCurrent();
+    }
+    delay(10);
+    return;                                 // hold the normal tick/fetch/render while configuring
   }
 
   unsigned long nowMs = millis();
@@ -219,7 +243,8 @@ void loop() {
   // Reconnect supervision — keep retrying STA forever when offline (never auto-open a
   // blocking portal; reprovision is the deliberate button-hold / web Change-WiFi).
   if (online) { reconnectTries = 0; }
-  else if (lastReconnect == 0 || nowMs - lastReconnect > RECONNECT_EVERY_MS) {
+  else if (settings::get().wifiEnabled &&
+           (lastReconnect == 0 || nowMs - lastReconnect > RECONNECT_EVERY_MS)) {
     if (++reconnectTries % 4 == 0) {
       Serial.println(F("[net] reconnect not sticking -> full radio restart"));
       WiFi.disconnect(true); delay(100); provisioning::beginStored();
@@ -230,7 +255,7 @@ void loop() {
   if ((int)online != wasOnline) {
     Serial.printf("[net] WiFi %s\n", online ? "up" : "down");
     wasOnline = online;
-    if (firstFetch && !g_awaitWifiConfirm) renderCurrent();   // toggle the reconnecting glyph
+    if (firstFetch) renderCurrent();   // toggle the reconnecting glyph
   }
 
   // Poll USGS. We fetch as soon as we're online (even before NTP): the fetch reads
@@ -249,7 +274,7 @@ void loop() {
     }
   }
 
-  if (g_viewChanged && !g_awaitWifiConfirm) {
+  if (g_viewChanged) {
     g_viewChanged = false;
     Serial.printf("[view] now: %s\n", viewstate::name(viewstate::current()));
     renderCurrent();
@@ -271,7 +296,7 @@ void loop() {
   // Tick the footer clock on each minute boundary via a no-flash partial refresh
   // (full renders only happen on poll / view / connectivity change). Skip while a
   // confirm prompt is up so we don't paint over it.
-  if (timeOK && firstFetch && !g_awaitWifiConfirm) {
+  if (timeOK && firstFetch) {
     struct tm lt; time_t n = timekeeper::now(); localtime_r(&n, &lt);
     if (lt.tm_min != lastMinute) { lastMinute = lt.tm_min; epd::tickClock(viewstate::current(), true); }
   }

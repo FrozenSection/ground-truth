@@ -13,6 +13,7 @@ namespace settings {
     bool   unitsKm;     // true = km, false = mi
     int    pollMin;
     bool   clock24h;
+    bool   wifiEnabled; // false = Ethernet-only, WiFi radio off (dorm good-citizen mode)
     String tz;          // POSIX TZ string
     String name;        // monitoring-location label from the geocode search
                         // ("Davis, CA"); "" when coords were hand-entered

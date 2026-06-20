@@ -41,6 +41,15 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       live: dual-connect AND Ethernet-only (WiFi radio off) — link, DHCP, time sync, fetch,
       web all over the W5500; serves on both IPs. Pre-sync bootstrap query capped to 25 events
       (a large TLS burst truncated over the 8 MHz link; windowed fetch keeps the full limit).
+- [x] **Gate 1c — Config mode + WiFi toggle.** DONE (2026-06-20). A 3 s button-hold raises the
+      device's own AP (`GroundTruth-Setup`) *beside* the running web server + captive DNS, so a
+      phone reaches the **full settings page at 192.168.4.1** — works on any venue network
+      (dorm client-isolation can't block a direct join); the display keeps running on Ethernet.
+      Tap exits; 10-min auto-close. WiFi credentials are now settable from the web UI (scan +
+      manual + password), plus **Forget network** and a **WiFi radio on/off** toggle (NVS
+      `wifiEnabled`; off = Ethernet-only, no probing — dorm good-citizen). Boot honors the
+      toggle; the reconnect supervisor is gated on it; the hold always re-enables WiFi. Button
+      hold is now non-destructive (was forget-creds-and-reboot). User guide: docs/USAGE.md.
 - [x] **Gate 2 — Seismic data.** HTTPS FDSN fetch, filtered/streamed ArduinoJson parse
       (defensive), haversine distance/bearing, **hybrid headline**, 24 h/7 d counts +
       histogram + range + felt, **swarm clustering** (≥6 within 15 km → `×n`), NVS

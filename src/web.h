@@ -14,4 +14,8 @@ namespace web {
   bool consumeReboot();
   bool consumeWifiReset();
   bool consumeApplyConfig();   // settings saved -> re-apply TZ live + force a re-fetch
+
+  // Config mode (button-hold AP): when on, unknown paths redirect to the settings page so a
+  // phone's captive-portal check pops it open automatically. Main toggles this on enter/exit.
+  void setConfigMode(bool on);
 }

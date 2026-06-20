@@ -18,6 +18,7 @@ namespace {
   AsyncWebServer server(WEB_PORT);
   bool g_started = false;
   volatile bool g_reboot = false, g_wifiReset = false, g_applyConfig = false;
+  volatile bool g_configMode = false;   // button-hold AP active -> captive-redirect unknown paths
 
   // ---- main page: the 1-bit display mirror + recent events (the "data") ----
   const char PAGE_HTML[] PROGMEM = R"HTML(<!DOCTYPE html><html><head>
@@ -217,6 +218,25 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 <h2>Diagnostics</h2>
 <div class="card"><div class="kv" id="diag">loading…</div></div>
 
+<h2>Network</h2>
+<div class="card">
+  <div class="row"><div><label>WiFi radio</label>
+    <select id="wifi_on"><option value="1">On</option><option value="0">Off — Ethernet only</option></select></div>
+  <div><label>Current network</label><input id="cur_ssid" disabled></div></div>
+  <p style="font-size:12px;color:#666;margin:.1rem 0 .5rem">Turn WiFi off for a wired-only spot (a dorm on Ethernet) so the device stops broadcasting — the good-citizen setting. A 3-second hold on the device button always reopens this page.</p>
+  <button onclick="setWifi()">Apply WiFi on/off</button>
+  <hr style="margin:1rem 0;border:0;border-top:1px solid #ddd">
+  <label>Join a network</label>
+  <select id="wssid"><option>scanning…</option></select>
+  <label>…or type the name</label>
+  <input id="wmanual" placeholder="(leave blank to use the list)">
+  <label>Password</label>
+  <input id="wpass" type="password" placeholder="network password">
+  <button onclick="saveWifi()">Save &amp; connect</button>
+  <button class="warn" onclick="act('/api/wifi/reset','Forget the saved WiFi network and reopen the setup portal?')">Forget network</button>
+  <p class="msg" id="wmsg"></p>
+</div>
+
 <h2>Firmware</h2>
 <div class="card"><a href="/update">Open firmware update (OTA) ›</a>
 <p style="font-size:12px;color:#666;margin:8px 0 0">Asks for a username/password — that's the device's update credential.</p></div>
@@ -224,7 +244,6 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 <h2>Actions</h2>
 <div class="card">
   <button onclick="act('/api/reboot','Reboot the device?')">Reboot</button>
-  <button class="warn" onclick="act('/api/wifi/reset','Forget WiFi and reopen the setup portal?')">Change WiFi</button>
 </div>
 <div style="height:40px"></div>
 </div>
@@ -254,12 +273,14 @@ function applyGeo(g){f("lat").value=g.lat;f("lon").value=g.lon;
 
 function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
  const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
+ const eth=d.eth||{};const ethTxt=eth.present?(eth.mac+(eth.up?" · up":" · down")):"—";
  f("diag").innerHTML=`<b>Firmware</b><span>v${d.fw}</span><b>Status</b><span>${d.online?"online":"offline"} · synced ${d.synced}</span>`+
-  `<b>Signal</b><span>${d.rssi} dBm</span><b>IP</b><span>${d.ip}</span><b>MAC</b><span>${d.mac}</span>`+
-  `<b>Host</b><span>${d.host}.local</span><b>Uptime</b><span>${up}</span>`+
+  `<b>IP</b><span>${d.ip}</span><b>WiFi MAC</b><span>${d.mac}</span>`+
+  `<b>Ethernet</b><span>${ethTxt}</span><b>Host</b><span>${d.host}.local</span><b>Uptime</b><span>${up}</span>`+
   `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Largest</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
  const c=d.cfg;f("lat").value=c.lat;f("lon").value=c.lon;f("radius").value=c.radiusKm;
  f("minmag").value=c.minMag;f("poll").value=c.pollMin;f("clock").value=c.clock24h?"24":"12";f("tz").value=c.tz;
+ f("wifi_on").value=c.wifiEnabled?"1":"0";f("cur_ssid").value=d.wifiSsid||"(none set)";
  f("place").value=c.name||"";f("label").value=c.name||"";labelAuto=true;
  // Stored coords already correspond to the stored label — seed lastGeo so a save that
  // only tweaks radius/etc doesn't needlessly re-geocode or move the pin.
@@ -293,6 +314,21 @@ f("cfg").addEventListener("submit",e=>{e.preventDefault();
  .catch(err=>{f("msg").style.color="#a3301f";f("msg").textContent=(err==="no match")?("Couldn't find “"+place+"” — check the spelling or enter coordinates."):("Rejected: "+err);});
 });
 function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Done — the device is restarting. This page is unreachable for ~10 s; reload it then."));}
+// Network section: live WiFi scan + on/off + join.
+function loadScan(){fetch("/api/wifi/scan").then(r=>r.json()).then(d=>{
+ if(d.scanning){setTimeout(loadScan,1300);return;}
+ var s=f("wssid");s.innerHTML="";
+ (d.networks||[]).forEach(function(n){var o=document.createElement("option");
+   o.value=n.ssid;o.textContent=n.ssid+" ("+n.rssi+"dBm)"+(n.enc?" \u{1F512}":"");s.appendChild(o);});
+ if(!s.options.length){var o=document.createElement("option");o.textContent="(none found)";s.appendChild(o);}
+});}
+loadScan();
+function setWifi(){f("wmsg").style.color="#1a7f37";f("wmsg").textContent="Applying… the device restarts (~10 s), then reload.";
+ fetch("/api/wifi/enable",{method:"POST",body:new URLSearchParams({on:f("wifi_on").value})});}
+function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
+ if(!ssid||ssid==="(none found)"){f("wmsg").style.color="#a3301f";f("wmsg").textContent="Pick or type a network name.";return;}
+ f("wmsg").style.color="#1a7f37";f("wmsg").textContent="Saving… the device restarts and joins “"+ssid+"”, then reload.";
+ fetch("/api/wifi/save",{method:"POST",body:new URLSearchParams({ssid:ssid,pass:f("wpass").value})});}
 </script></body></html>)HTML";
 
   void buildState(JsonDocument& doc) {
@@ -328,7 +364,8 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     cf["manual"] = c.locManual; cf["lat"] = c.lat; cf["lon"] = c.lon;
     cf["radiusKm"] = c.radiusKm; cf["minMag"] = c.minMag; cf["unitsKm"] = c.unitsKm;
     cf["pollMin"] = c.pollMin; cf["clock24h"] = c.clock24h; cf["tz"] = c.tz;
-    cf["name"] = c.name;
+    cf["name"] = c.name; cf["wifiEnabled"] = c.wifiEnabled;
+    doc["wifiSsid"] = provisioning::storedSsid();   // current saved network (Network section)
 
     JsonObject tm = doc["time"].to<JsonObject>();
     tm["hm"]   = ok ? timekeeper::clockHM(c.clock24h) : "--:--";
@@ -447,7 +484,30 @@ void begin() {
   server.on("/api/wifi/reset", HTTP_POST, [](AsyncWebServerRequest* r) {
     r->send(200, "application/json", "{\"ok\":true}"); g_wifiReset = true;
   });
-  server.onNotFound([](AsyncWebServerRequest* r) { r->send(404, "text/plain", "not found"); });
+  server.on("/api/wifi/enable", HTTP_POST, [](AsyncWebServerRequest* r) {
+    bool on = r->hasParam("on", true) && r->getParam("on", true)->value() == "1";
+    settings::Config c = settings::get(); c.wifiEnabled = on; settings::update(c);
+    r->send(200, "application/json", "{\"ok\":true}");
+    g_reboot = true;                                  // reboot to apply the radio state cleanly
+  });
+  server.on("/api/wifi/scan", HTTP_GET, [](AsyncWebServerRequest* r) {
+    r->send(200, "application/json", provisioning::scanJson());
+  });
+  server.on("/api/wifi/save", HTTP_POST, [](AsyncWebServerRequest* r) {
+    String ssid = r->hasParam("ssid", true) ? r->getParam("ssid", true)->value() : String("");
+    String pass = r->hasParam("pass", true) ? r->getParam("pass", true)->value() : String("");
+    if (!ssid.length()) { r->send(400, "text/plain", "network name required"); return; }
+    provisioning::saveCreds(ssid, pass);
+    settings::Config c = settings::get(); c.wifiEnabled = true; settings::update(c);  // setting a network enables WiFi
+    r->send(200, "application/json", "{\"ok\":true}");
+    g_reboot = true;                                  // reboot to join the new network cleanly
+  });
+  // Captive-portal helper: in Config mode, send unknown paths to the settings page so a
+  // phone's "sign in to network" check pops it open; otherwise a plain 404.
+  server.onNotFound([](AsyncWebServerRequest* r) {
+    if (g_configMode) r->redirect(String("http://") + AP_IP_STR + "/settings");
+    else              r->send(404, "text/plain", "not found");
+  });
 
   ElegantOTA.setAuth(OTA_USERNAME, OTA_PASSWORD);   // /update is authenticated
   ElegantOTA.begin(&server);
@@ -461,5 +521,6 @@ void loop() { ElegantOTA.loop(); }
 bool consumeReboot()      { if (g_reboot)      { g_reboot = false;      return true; } return false; }
 bool consumeWifiReset()   { if (g_wifiReset)   { g_wifiReset = false;   return true; } return false; }
 bool consumeApplyConfig() { if (g_applyConfig) { g_applyConfig = false; return true; } return false; }
+void setConfigMode(bool on) { g_configMode = on; }
 
 }  // namespace web
