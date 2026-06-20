@@ -214,10 +214,12 @@ locking down settings**. Keep day-to-day use **frictionless**.
     SPI W5500 ("co-processor" = its built-in TCP/IP stack), on-board level-shifting +
     RJ45 link/act LEDs. **Breakout, not a stacked Wing** (cleaner with the eInk Friend's
     FPC; flexible RJ45 placement in the custom case). Shares SPI (SCK 5 / MOSI 19 /
-    MISO 21); **proposed control pins CS=GPIO4 (A5), INT=25 (A1), RST=22 (SDA)** — avoid
+    MISO 21); **control pins CS=GPIO4 (A5), IRQ=25 (A1), RST=22 (SDA)** — avoid
     EPD 15/33/32/14, **EPD BUSY 27** (hand-wired), button 26, strapping 0/2/12/15,
-    input-only 34/36/39 (SCL 20 stays free). Power the breakout from **5 V** (its own
-    reg) to spare the 3.3 V rail. RJ45 enclosure cutout. *Bench-validate: SPI sharing +
+    input-only 34/36/39 (SCL 20 stays free). **Power VIN from 3 V, NOT 5 V** — the board
+    level-shifts its SPI to VIN, so 5 V would drive MISO into the ESP32 at 5 V and kill the
+    pin; ~130 mA off the 3.3 V reg is fine on USB power. **Full wiring + wire colours:
+    [docs/WIRING.md](WIRING.md).** RJ45 enclosure cutout. *Bench-validate: SPI sharing +
     dual-stack default route.*
 
   **Wiring done 2026-06-13:** EPD **BUSY → GPIO27** (D11 position, like countdown) and
