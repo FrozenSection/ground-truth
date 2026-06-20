@@ -170,7 +170,7 @@ bool fetch() {
     return false;
   }
 
-  // Bound the response (oversized/hostile body) before materializing it.
+  // Bound a Content-Length response before materializing it (chunked replies report -1).
   int len = http.getSize();
   if (len > MAX_RESP_BYTES) {
     Serial.printf("[usgs] response too large (%d) — rejecting\n", len);
@@ -182,7 +182,19 @@ bool fetch() {
   // blocks UDP 123, no RTC) — do it BEFORE computing recency/windows.
   timekeeper::setFromHttpDate(http.header("Date"));
 
-  // Filtered, streamed parse — only the fields we display.
+  // De-chunk the body before parsing. USGS switches to Transfer-Encoding: chunked above
+  // ~5 KB, and ESP32 HTTPClient::getStream() returns the RAW chunked bytes (chunk-size hex
+  // prefixes included) — deserializeJson then reads the leading hex as a bare number and
+  // yields 0 events, so any wider-radius / lower-magnitude query fell back to "Quiet".
+  // getString() de-chunks; the body is bounded by limit=100 (~80 KB worst case).
+  String body = http.getString();
+  http.end();
+  if ((int)body.length() > MAX_RESP_BYTES || body.length() < 20) {
+    Serial.printf("[usgs] body %d bytes — rejecting (keeping last good)\n", body.length());
+    return false;
+  }
+
+  // Filtered parse — keep only the fields we display.
   JsonDocument filter;
   JsonObject fp = filter["features"][0].to<JsonObject>();
   fp["properties"]["mag"]   = true;
@@ -194,9 +206,7 @@ bool fetch() {
   fp["geometry"]["coordinates"] = true;
 
   JsonDocument doc;
-  DeserializationError err = deserializeJson(
-      doc, http.getStream(), DeserializationOption::Filter(filter));
-  http.end();
+  DeserializationError err = deserializeJson(doc, body, DeserializationOption::Filter(filter));
   if (err) { Serial.printf("[usgs] parse: %s (keeping last good)\n", err.c_str()); return false; }
 
   const auto& c = settings::get();

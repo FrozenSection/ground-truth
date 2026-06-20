@@ -4,6 +4,17 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.10] — 2026-06-21 · Fix: false "Quiet" on wider-radius / lower-magnitude queries
+- **De-chunk the USGS body before parsing.** USGS switches to `Transfer-Encoding: chunked`
+  for responses above ~5 KB, and ESP32 `HTTPClient::getStream()` hands back the *raw*
+  chunked bytes (hex chunk-size prefixes included). `deserializeJson` read the leading hex
+  as a bare number, returned 0 events, and the display fell to **"Quiet"** — so any query
+  bigger than the smallest (e.g. radius ≥ ~400 km, or min-mag ≤ ~2.2) showed nothing. Now
+  the body is fetched with `getString()` (which de-chunks) and parsed from there.
+  *Verified live: radius 500 / min-mag 2.0 now returns 41 events (was Quiet).* This was a
+  transport bug, **not** a radius/magnitude limit — both settings work across their full
+  range (radius 25–1000 km, min-mag −1.0–9.9).
+
 ## [0.9.9] — 2026-06-21 · Timeline legibility
 - **Headline magnitude label moved above its dot** (centered, edge-clamped) — it was
   parked to the right and got lost among neighbouring lollipops. Above is always clear

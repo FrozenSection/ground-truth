@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.9.9"   // timeline: headline label above its dot; stat line spread L/C/R
+#define FIRMWARE_VERSION "0.9.10"  // fix: de-chunk USGS body (chunked >5KB parsed as 0 events -> false Quiet)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
