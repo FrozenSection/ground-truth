@@ -4,6 +4,11 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.6] — 2026-06-21 · Spacing + capitalization
+- **Lifted "Largest: …" off the footer divider** (was hugging it) — nudged the depth-key
+  block + record line up a few px for breathing room.
+- **Hero `depth` → `Depth`** to match the capitalized Shallow/Deep depth key.
+
 ## [0.9.5] — 2026-06-21 · Stat column + footer polish
 - **Stat counts right-aligned** (x≈256) — padded off the center divider and snug to the
   labels, instead of hugging the divider with a wide gap. `IN 24 H` → `IN 24H`.

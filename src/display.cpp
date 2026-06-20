@@ -300,9 +300,9 @@ namespace {
 
     // line: depth + recency ("X ago" dropped in the Acquiring-time state)
     char det[40];
-    if (timeOK) snprintf(det, sizeof(det), "depth %dkm \xC2\xB7 %s",
+    if (timeOK) snprintf(det, sizeof(det), "Depth %dkm \xC2\xB7 %s",
                          (int)lround(q.depthKm), timekeeper::relative(q.t).c_str());
-    else        snprintf(det, sizeof(det), "depth %dkm", (int)lround(q.depthKm));
+    else        snprintf(det, sizeof(det), "Depth %dkm", (int)lround(q.depthKm));
     txt(150, y2, det, F_BODY);
 
     // line: distance + bearing FROM the monitoring location, named so it's unambiguous.
@@ -403,12 +403,12 @@ namespace {
     txt(STAT_LABEL_X, 180, mr, F_BADGE);
 
     display.drawLine(212, 192, 388, 192, GxEPD_BLACK);
-    display.drawCircle(219, 204, 3, GxEPD_BLACK); txt(230, 208, "Shallow \xC2\xB7 < 8km", F_MICRO);
-    display.fillCircle(219, 220, 3, GxEPD_BLACK); txt(230, 224, "Deep \xC2\xB7 > 8km", F_MICRO);
+    display.drawCircle(219, 202, 3, GxEPD_BLACK); txt(230, 206, "Shallow \xC2\xB7 < 8km", F_MICRO);
+    display.fillCircle(219, 218, 3, GxEPD_BLACK); txt(230, 222, "Deep \xC2\xB7 > 8km", F_MICRO);
     if (seismic::recordMag() > 0) {
       char r[44]; snprintf(r, sizeof(r), "Largest: M%.1f \xC2\xB7 %s",
                            seismic::recordMag(), seismic::recordDate().c_str());
-      txt(212, 238, r, F_LABEL);
+      txt(212, 234, r, F_LABEL);                          // lifted off the footer divider
     }
   }
 
