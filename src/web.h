@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "settings.h"
 
 // STA-mode web server:
 //   /          live B-tight display mirror + recent-events table  (the data)
@@ -13,7 +14,9 @@ namespace web {
   // Actions requested from the web (consumed by the main loop, which owns reboot).
   bool consumeReboot();
   bool consumeWifiReset();
-  bool consumeApplyConfig();   // settings saved -> re-apply TZ live + force a re-fetch
+  // Settings saved from the web are queued (validated) and applied by the main loop, never
+  // mutated from the async task. Returns true + fills `out` when a save is pending. (#2)
+  bool consumePendingConfig(settings::Config& out);
 
   // Config mode (button-hold AP): when on, unknown paths redirect to the settings page so a
   // phone's captive-portal check pops it open automatically. Main toggles this on enter/exit.

@@ -117,11 +117,15 @@ void setup() {
     online = provisioning::tryConnect();
     if (online) {
       provisioning::clearFresh();
-    } else if (provisioning::freshlyProvisioned()) {
-      // Creds entered moments ago don't connect (typo / wrong network) -> portal+error.
-      Serial.println(F("[wifi] fresh creds failed -> portal"));
+    } else if (provisioning::freshlyProvisioned() && !neteth::up()) {
+      // Creds entered moments ago don't connect (typo / wrong network) AND no wired link to
+      // fall back on -> portal+error. If Ethernet IS up we skip the blocking portal entirely
+      // and run on Ethernet; WiFi can be corrected later via Config mode.
+      Serial.println(F("[wifi] fresh creds failed, no Ethernet -> portal"));
       epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac(), /*error=*/true);
       provisioning::openPortal();
+    } else if (provisioning::freshlyProvisioned()) {
+      Serial.println(F("[wifi] fresh creds failed, but Ethernet is up -> continue on Ethernet"));
     } else {
       // Previously-good creds not connecting (router down, transient, or moved). Do NOT
       // auto-open a blocking portal — keep retrying STA in loop() and retain the last frame.
@@ -157,9 +161,8 @@ void loop() {
   static bool          netUp        = false;
   static unsigned long lastReconnect = 0;
   static int           reconnectTries = 0;
-  static unsigned long lastFetchMs  = 0;
-  static bool          firstFetch   = false;
-  static bool          forceFetch   = false;
+  static unsigned long nextFetchMs  = 0;       // earliest time for the next USGS attempt (0 = ASAP)
+  static bool          firstFetch   = false;   // have we had >=1 successful fetch (render gating)
   static float         appliedLat   = settings::get().lat;   // for location-change detect
   static float         appliedLon   = settings::get().lon;
   static int           lastMinute   = -1;                    // footer partial-refresh boundary
@@ -173,6 +176,23 @@ void loop() {
 #endif
 
   pollButton();
+
+  // Settings saved from the web are validated+queued by the async task and APPLIED HERE, on
+  // the loop task — the global Config is never mutated cross-task, removing the get()/update()
+  // String read race. (#2) Runs before the reboot handlers so a queued WiFi toggle persists
+  // to NVS before its reboot fires.
+  {
+    settings::Config pc;
+    if (web::consumePendingConfig(pc)) {
+      settings::update(pc);                              // sole writer of the global, loop-task only
+      Serial.println(F("[main] settings applied -> re-apply TZ + re-fetch"));
+      timekeeper::begin(settings::get().tz);
+      const auto& cfg = settings::get();
+      if (fabs(cfg.lat - appliedLat) > 0.1f || fabs(cfg.lon - appliedLon) > 0.1f) seismic::resetRecord();
+      appliedLat = cfg.lat; appliedLon = cfg.lon;
+      nextFetchMs = millis();                            // re-fetch ASAP with the new config
+    }
+  }
 
   if (web::consumeWifiReset()) {
     Serial.println(F("[main] WiFi reset -> clearing creds, rebooting to portal"));
@@ -242,19 +262,6 @@ void loop() {
   }
   if (netUp) web::loop();   // ElegantOTA housekeeping
 
-  // Settings saved from the web: re-apply TZ live, reset the all-time record if the
-  // location moved materially, and force an immediate re-fetch (no reboot).
-  if (web::consumeApplyConfig()) {
-    Serial.println(F("[main] settings saved -> re-apply TZ + re-fetch"));
-    timekeeper::begin(settings::get().tz);
-    const auto& cfg = settings::get();
-    if (fabs(cfg.lat - appliedLat) > 0.1f || fabs(cfg.lon - appliedLon) > 0.1f) {
-      seismic::resetRecord();
-    }
-    appliedLat = cfg.lat; appliedLon = cfg.lon;
-    forceFetch = true;
-  }
-
   // Reconnect supervision — keep retrying STA forever when offline (never auto-open a
   // blocking portal; reprovision is the deliberate button-hold / web Change-WiFi).
   if (online) { reconnectTries = 0; }
@@ -276,17 +283,16 @@ void loop() {
   // Poll USGS. We fetch as soon as we're online (even before NTP): the fetch reads
   // the HTTPS Date header to set the clock when NTP is blocked, and time-dependent
   // display fields are gated on a trustworthy clock elsewhere.
-  if (online && netUp) {
+  if (online && netUp && (long)(nowMs - nextFetchMs) >= 0) {   // overflow-safe deadline
     unsigned long pollMs = (unsigned long)settings::get().pollMin * 60000UL;
-    if (!firstFetch || forceFetch || nowMs - lastFetchMs >= pollMs) {
-      health::feed();   // reset the WDT clock right before the ~15-17 s blocking HTTPS fetch
-      if (seismic::fetch()) {
-        lastFetchMs = nowMs; firstFetch = true; forceFetch = false;
-        printSummary();
-        renderCurrent();
-      } else {
-        lastFetchMs = nowMs - pollMs + 30000UL;   // retry in ~30 s
-      }
+    health::feed();   // reset the WDT clock right before the ~15-17 s blocking HTTPS fetch
+    if (seismic::fetch()) {
+      firstFetch = true;
+      nextFetchMs = nowMs + pollMs;               // schedule the next regular poll
+      printSummary();
+      renderCurrent();
+    } else {
+      nextFetchMs = nowMs + 30000UL;              // back off 30 s on ANY failure (first/forced/poll)
     }
   }
 
@@ -306,7 +312,7 @@ void loop() {
   bool timeOK = timekeeper::synced();
   if ((int)timeOK != wasTimeOK) {
     wasTimeOK = timeOK;
-    if (timeOK && firstFetch) { forceFetch = true; renderCurrent(); }
+    if (timeOK && firstFetch) { nextFetchMs = nowMs; renderCurrent(); }   // re-fetch windowed now
   }
 
   // Tick the footer clock on each minute boundary via a no-flash partial refresh

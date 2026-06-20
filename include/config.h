@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.12.3"  // audit fixes: shared AP-raise+quiesce, dead-code, WDT feed before fetch
+#define FIRMWARE_VERSION "0.12.4"  // codex audit: fetch backoff, settings-race queue, eth-fresh-fail, time-src, scan, pins
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -39,7 +39,11 @@
 #endif
 #ifndef OTA_PASSWORD
 #define OTA_PASSWORD "groundtruth"
-#warning "Using the DEFAULT OTA password — set a unique OTA_PASSWORD in include/personalization.h before the gift build."
+#ifdef GIFT_BUILD
+#error "GIFT_BUILD with the DEFAULT OTA password — set a unique OTA_PASSWORD in include/personalization.h before shipping."
+#else
+#warning "Using the DEFAULT OTA password — set a unique OTA_PASSWORD in include/personalization.h before the gift build (build with -DGIFT_BUILD to enforce)."
+#endif
 #endif
 
 // ---- E-paper wiring (ESP32 Feather V2 + eInk Feather Friend) ----

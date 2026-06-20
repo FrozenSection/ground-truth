@@ -264,6 +264,7 @@ void saveCreds(const String& ssid, const String& pass) {
 }
 
 String scanJson() {
+  if (WiFi.getMode() == WIFI_MODE_NULL) return String("{\"disabled\":true}");  // radio off -> can't scan
   int n = WiFi.scanComplete();
   JsonDocument doc;
   if (n == WIFI_SCAN_FAILED) { WiFi.scanNetworks(true, true); doc["scanning"] = true; }

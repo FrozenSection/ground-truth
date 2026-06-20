@@ -1,8 +1,13 @@
 #include "timekeeper.h"
 #include "config.h"
+#include "esp_sntp.h"
 
 namespace {
   bool g_setViaHttp = false;
+
+  // NTP delivered a real sync -> it has taken over from the HTTP-Date bootstrap, so the
+  // reported source flips from "http" to "ntp".
+  void onNtpSync(struct timeval*) { g_setViaHttp = false; }
 
   // Days since 1970-01-01 for a civil (proleptic Gregorian) date — Howard Hinnant's
   // algorithm. Lets us turn the UTC fields from strptime into an epoch without timegm
@@ -20,6 +25,7 @@ namespace {
 namespace timekeeper {
 
 void begin(const String& tz) {
+  sntp_set_time_sync_notification_cb(onNtpSync);   // flip source http -> ntp when NTP lands
   configTzTime(tz.c_str(), NTP_SERVER_1, NTP_SERVER_2);
   Serial.printf("[time] NTP started (tz=%s)\n", tz.c_str());
 }

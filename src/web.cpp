@@ -18,8 +18,22 @@
 namespace {
   AsyncWebServer server(WEB_PORT);
   bool g_started = false;
-  volatile bool g_reboot = false, g_wifiReset = false, g_applyConfig = false;
+  volatile bool g_reboot = false, g_wifiReset = false;
   volatile bool g_configMode = false;   // button-hold AP active -> captive-redirect unknown paths
+  volatile bool g_hasPending = false;   // a validated Config is queued for the loop to apply (#2)
+  settings::Config g_pendingCfg;        // guarded by g_stateMutex
+
+  // Queue a validated config for the main loop to apply (it owns the global). Snapshots the
+  // current config under the lock, lets the caller mutate the copy, then publishes it.
+  void queueConfig(const settings::Config& c) {
+    std::lock_guard<std::mutex> lk(g_stateMutex);
+    g_pendingCfg = c;
+    g_hasPending = true;
+  }
+  settings::Config currentConfigLocked() {              // a locked snapshot for the web task
+    std::lock_guard<std::mutex> lk(g_stateMutex);
+    return settings::get();
+  }
 
   // ---- main page: the 1-bit display mirror + recent events (the "data") ----
   const char PAGE_HTML[] PROGMEM = R"HTML(<!DOCTYPE html><html><head>
@@ -318,8 +332,10 @@ f("cfg").addEventListener("submit",e=>{e.preventDefault();
 function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Done — the device is restarting. This page is unreachable for ~10 s; reload it then."));}
 // Network section: live WiFi scan + on/off + join.
 function loadScan(){fetch("/api/wifi/scan").then(r=>r.json()).then(d=>{
+ var s=f("wssid");
+ if(d.disabled){s.innerHTML="";var o=document.createElement("option");o.textContent="(turn WiFi on above to scan — or type the name below)";s.appendChild(o);return;}
  if(d.scanning){setTimeout(loadScan,1300);return;}
- var s=f("wssid");s.innerHTML="";
+ s.innerHTML="";
  (d.networks||[]).forEach(function(n){var o=document.createElement("option");
    o.value=n.ssid;o.textContent=n.ssid+" ("+n.rssi+"dBm)"+(n.enc?" \u{1F512}":"");s.appendChild(o);});
  if(!s.options.length){var o=document.createElement("option");o.textContent="(none found)";s.appendChild(o);}
@@ -446,7 +462,7 @@ function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
   }
 
   void handleConfig(AsyncWebServerRequest* req) {
-    settings::Config c = settings::get();
+    settings::Config c = currentConfigLocked();   // snapshot under the lock (web task)
     auto P = [&](const char* k, String& dst) {
       if (req->hasParam(k, true)) dst = req->getParam(k, true)->value();
     };
@@ -462,9 +478,8 @@ function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
     c.name = ""; P("name", c.name);   // geocode label (may be blank for raw coords)
     String err;
     if (!settings::validate(c, err)) { req->send(400, "text/plain", err); return; }
-    settings::update(c);
+    queueConfig(c);   // the main loop applies it (TZ re-apply + re-fetch) — no cross-task write
     req->send(200, "application/json", "{\"ok\":true}");
-    g_applyConfig = true;   // main loop re-applies TZ + forces a re-fetch (no reboot)
   }
 }  // namespace
 
@@ -491,9 +506,9 @@ void begin() {
   });
   server.on("/api/wifi/enable", HTTP_POST, [](AsyncWebServerRequest* r) {
     bool on = r->hasParam("on", true) && r->getParam("on", true)->value() == "1";
-    settings::Config c = settings::get(); c.wifiEnabled = on; settings::update(c);
+    settings::Config c = currentConfigLocked(); c.wifiEnabled = on; queueConfig(c);
     r->send(200, "application/json", "{\"ok\":true}");
-    g_reboot = true;                                  // reboot to apply the radio state cleanly
+    g_reboot = true;   // loop applies the queued config (persists wifiEnabled) BEFORE this reboot fires
   });
   server.on("/api/wifi/scan", HTTP_GET, [](AsyncWebServerRequest* r) {
     r->send(200, "application/json", provisioning::scanJson());
@@ -503,7 +518,7 @@ void begin() {
     String pass = r->hasParam("pass", true) ? r->getParam("pass", true)->value() : String("");
     if (!ssid.length()) { r->send(400, "text/plain", "network name required"); return; }
     provisioning::saveCreds(ssid, pass);
-    settings::Config c = settings::get(); c.wifiEnabled = true; settings::update(c);  // setting a network enables WiFi
+    settings::Config c = currentConfigLocked(); c.wifiEnabled = true; queueConfig(c);  // setting a network enables WiFi
     r->send(200, "application/json", "{\"ok\":true}");
     g_reboot = true;                                  // reboot to join the new network cleanly
   });
@@ -527,7 +542,14 @@ void loop() { ElegantOTA.loop(); }
 
 bool consumeReboot()      { if (g_reboot)      { g_reboot = false;      return true; } return false; }
 bool consumeWifiReset()   { if (g_wifiReset)   { g_wifiReset = false;   return true; } return false; }
-bool consumeApplyConfig() { if (g_applyConfig) { g_applyConfig = false; return true; } return false; }
+bool consumePendingConfig(settings::Config& out) {
+  if (!g_hasPending) return false;                       // cheap unlocked pre-check
+  std::lock_guard<std::mutex> lk(g_stateMutex);
+  if (!g_hasPending) return false;
+  out = g_pendingCfg;
+  g_hasPending = false;
+  return true;
+}
 void setConfigMode(bool on) { g_configMode = on; }
 
 }  // namespace web
