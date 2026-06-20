@@ -8,9 +8,19 @@ namespace {
   settings::Config g;
 
   const char* ALLOWED_TZ[] = {
+    // US
     "PST8PDT,M3.2.0,M11.1.0", "MST7MDT,M3.2.0,M11.1.0", "MST7",
     "CST6CDT,M3.2.0,M11.1.0", "EST5EDT,M3.2.0,M11.1.0",
     "AKST9AKDT,M3.2.0,M11.1.0", "HST10",
+    // International (travel abroad) — POSIX TZ with DST rules where applicable
+    "UTC0",                                  // UTC
+    "GMT0BST,M3.5.0/1,M10.5.0",              // UK / Ireland
+    "CET-1CEST,M3.5.0,M10.5.0/3",            // Central Europe
+    "EET-2EEST,M3.5.0/3,M10.5.0/4",          // Eastern Europe
+    "IST-5:30",                              // India (no DST)
+    "CST-8",                                 // China (no DST)
+    "JST-9",                                 // Japan (no DST)
+    "AEST-10AEDT,M10.1.0,M4.1.0/3",          // Australia (Sydney)
   };
 
   // Clamp a loaded/parsed config back into valid ranges (NVS-repair on boot).
@@ -23,6 +33,8 @@ namespace {
     if (!settings::tzAllowed(c.tz))                       c.tz = DEFAULT_TZ;
     c.name.trim();
     if (c.name.length() > 48) c.name = c.name.substring(0, 48);  // NVS + footer sanity
+    c.fdsnUrl.trim();
+    if (!c.fdsnUrl.startsWith("https://") || c.fdsnUrl.length() > 200) c.fdsnUrl = DEFAULT_FDSN_URL;
   }
 }
 
@@ -42,6 +54,7 @@ void begin() {
   g.wifiEnabled = p.getBool("wifi_on", true);   // default on; flipped off for dorm Ethernet-only
   g.tz        = p.getString("tz",    DEFAULT_TZ);
   g.name      = p.getString("name",  "");
+  g.fdsnUrl   = p.getString("fdsn",  DEFAULT_FDSN_URL);
   p.end();
   g.unitsKm = true;                 // km everywhere — miles dropped (rings/depth are km)
   repair(g);                        // clamp any out-of-range NVS values back to sane
@@ -64,6 +77,7 @@ bool validate(const Config& c, String& err) {
   if (isnan(c.minMag) || c.minMag < -1 || c.minMag > 9.9f) { err = "min magnitude must be -1.0 to 9.9"; return false; }
   if (c.pollMin < 5 || c.pollMin > 1440)           { err = "poll interval must be 5-1440 min"; return false; }
   if (!tzAllowed(c.tz))                            { err = "unknown time zone"; return false; }
+  if (!c.fdsnUrl.startsWith("https://") || c.fdsnUrl.length() > 200) { err = "data URL must be https:// and < 200 chars"; return false; }
   return true;
 }
 
@@ -85,6 +99,7 @@ void update(const Config& c) {
   p.putBool ("wifi_on", g.wifiEnabled);
   p.putString("tz",    g.tz);
   p.putString("name",  g.name);
+  p.putString("fdsn",  g.fdsnUrl);
   p.end();
   Serial.println(F("[cfg] settings updated"));
 }

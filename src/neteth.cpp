@@ -35,6 +35,10 @@ void begin() {
   Serial.printf("[eth] begin %s (cs=%d irq=%d rst=%d, %d MHz)\n",
                 g_present ? "ok" : "FAILED — no W5500?",
                 W5500_CS, W5500_IRQ, W5500_RST, W5500_SPI_MHZ);
+  // Prefer Ethernet for outbound when both links are up. IDF defaults are STA route_prio=100,
+  // ETH=50 (so WiFi would win by default); raise ETH above the STA default rather than lowering
+  // STA, since the STA netif is recreated on every WiFi reconnect (which would reset its prio).
+  if (g_present) ETH.setRoutePrio(110);
 }
 
 bool   present() { return g_present; }
@@ -43,8 +47,8 @@ String mac()     { return g_present ? ETH.macAddress() : String(""); }
 String ip()      { return g_gotIP ? ETH.localIP().toString() : String("0.0.0.0"); }
 
 String activeIP() {
+  if (up())                          return ETH.localIP().toString();   // Ethernet is the preferred route
   if (WiFi.status() == WL_CONNECTED) return WiFi.localIP().toString();
-  if (up())                          return ETH.localIP().toString();
   return String("0.0.0.0");
 }
 

@@ -270,11 +270,21 @@ String scanJson() {
   if (n == WIFI_SCAN_FAILED) { WiFi.scanNetworks(true, true); doc["scanning"] = true; }
   else if (n == WIFI_SCAN_RUNNING) { doc["scanning"] = true; }
   else {
+    // Clean the list for a usable picker: drop hidden/empty SSIDs, collapse duplicate SSIDs
+    // (same network seen on multiple APs/bands — keep the strongest, which comes first since
+    // the scan is RSSI-sorted), and cap the count. Manual entry covers anything omitted.
     doc["scanning"] = false;
     JsonArray arr = doc["networks"].to<JsonArray>();
-    for (int i = 0; i < n && i < 20; i++) {
+    String seen[16]; int seenN = 0;
+    for (int i = 0; i < n && seenN < 12; i++) {
+      String ss = WiFi.SSID(i);
+      if (!ss.length()) continue;                          // hidden network
+      bool dup = false;
+      for (int j = 0; j < seenN; j++) if (seen[j] == ss) { dup = true; break; }
+      if (dup) continue;
+      seen[seenN++] = ss;
       JsonObject o = arr.add<JsonObject>();
-      o["ssid"] = WiFi.SSID(i);
+      o["ssid"] = ss;
       o["rssi"] = WiFi.RSSI(i);
       o["enc"]  = (WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
     }

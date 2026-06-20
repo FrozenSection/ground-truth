@@ -15,7 +15,6 @@
 namespace {
   const int    QUERY_LIMIT  = 100;            // bounded RAM; "100+" if hit
   const size_t PLACE_CAP    = 48;
-  const char*  FDSN = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 
   std::vector<seismic::Quake>   g_events;
   std::vector<seismic::Cluster> g_clusters;
@@ -49,7 +48,7 @@ namespace {
 
   String buildUrl() {
     const auto& c = settings::get();
-    String u = FDSN;
+    String u = c.fdsnUrl;   // configurable endpoint (default DEFAULT_FDSN_URL) — see settings
     u += "?format=geojson";
     u += "&latitude="    + String(c.lat, 4);
     u += "&longitude="   + String(c.lon, 4);

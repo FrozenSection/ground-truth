@@ -15,6 +15,7 @@
 | **Screen blank** | Power-cycle. The picture only redraws when something changes — a still screen is normal. |
 | **Shows a slashed-WiFi / "offline" mark** | It lost the network and is retrying. Check the cable/WiFi. To point it at a new network, use **Config mode** below. |
 | **`STALE DATA` stamp** | It's online but USGS didn't answer; it keeps the last reading and retries. Usually clears itself. |
+| **Data stopped for good (months/years out)** | USGS may have moved its data feed. The source URL can be updated in **Settings → Advanced — earthquake data source** (no reflash needed). |
 | **Says `Quiet`** | Normal — no quakes met the filters. Not an error. |
 
 ## Change settings, WiFi, or location (Config mode)

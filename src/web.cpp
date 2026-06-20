@@ -218,15 +218,30 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
   <div><label>Clock</label><select id="clock"><option value="12">12-hour</option><option value="24">24-hour</option></select></div></div>
   <label>Time zone</label>
   <select id="tz">
+    <optgroup label="United States">
     <option value="PST8PDT,M3.2.0,M11.1.0">Pacific (PT)</option>
     <option value="MST7MDT,M3.2.0,M11.1.0">Mountain (MT)</option>
     <option value="MST7">Arizona (no DST)</option>
     <option value="CST6CDT,M3.2.0,M11.1.0">Central (CT)</option>
     <option value="EST5EDT,M3.2.0,M11.1.0">Eastern (ET)</option>
     <option value="AKST9AKDT,M3.2.0,M11.1.0">Alaska (AKT)</option>
-    <option value="HST10">Hawaii (HT)</option>
+    <option value="HST10">Hawaii (HT)</option></optgroup>
+    <optgroup label="International">
+    <option value="UTC0">UTC</option>
+    <option value="GMT0BST,M3.5.0/1,M10.5.0">UK / Ireland</option>
+    <option value="CET-1CEST,M3.5.0,M10.5.0/3">Central Europe</option>
+    <option value="EET-2EEST,M3.5.0/3,M10.5.0/4">Eastern Europe</option>
+    <option value="IST-5:30">India</option>
+    <option value="CST-8">China</option>
+    <option value="JST-9">Japan</option>
+    <option value="AEST-10AEDT,M10.1.0,M4.1.0/3">Australia (Sydney)</option></optgroup>
   </select>
   <input type="hidden" id="manual" value="1">
+  <details style="margin-top:.7rem"><summary style="font-size:13px;color:#666;cursor:pointer">Advanced — earthquake data source</summary>
+    <label>USGS data URL</label>
+    <input id="fdsn" type="text" placeholder="https://earthquake.usgs.gov/fdsnws/event/1/query">
+    <div style="font-size:12px;color:#666;margin:4px 0 0">Leave this alone. Only change it if quake data stops updating for good and USGS has moved the endpoint.</div>
+  </details>
   <button type="submit">Save</button><span class="msg" id="msg"></span>
 </form></div>
 
@@ -296,6 +311,7 @@ function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
   `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Largest</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
  const c=d.cfg;f("lat").value=c.lat;f("lon").value=c.lon;f("radius").value=c.radiusKm;
  f("minmag").value=c.minMag;f("poll").value=c.pollMin;f("clock").value=c.clock24h?"24":"12";f("tz").value=c.tz;
+ f("fdsn").value=c.fdsn||"";
  f("wifi_on").value=c.wifiEnabled?"1":"0";f("cur_ssid").value=d.wifiSsid||"(none set)";
  f("place").value=c.name||"";f("label").value=c.name||"";labelAuto=true;
  // Stored coords already correspond to the stored label — seed lastGeo so a save that
@@ -323,7 +339,8 @@ f("cfg").addEventListener("submit",e=>{e.preventDefault();
   const label=f("label").value.trim();
   const name=label||(place?lastGeo.name:"");   // editable label wins; else verified name; else blank -> device shows lat,lon
   const b=new URLSearchParams({manual:"1",lat:f("lat").value,lon:f("lon").value,radius:f("radius").value,
-   minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value,name:name});
+   minmag:f("minmag").value,poll:f("poll").value,clock:f("clock").value,tz:f("tz").value,name:name,
+   fdsn:f("fdsn").value.trim()});
   return fetch("/api/config",{method:"POST",body:b}).then(r=>r.ok?r.text():r.text().then(t=>Promise.reject(t)));
  })
  .then(()=>{f("msg").textContent="Saved ✓ — applying & refreshing…";setTimeout(load,1600);setTimeout(()=>{f("msg").textContent="Saved ✓";},4200);})
@@ -385,7 +402,7 @@ function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
     cf["manual"] = c.locManual; cf["lat"] = c.lat; cf["lon"] = c.lon;
     cf["radiusKm"] = c.radiusKm; cf["minMag"] = c.minMag; cf["unitsKm"] = c.unitsKm;
     cf["pollMin"] = c.pollMin; cf["clock24h"] = c.clock24h; cf["tz"] = c.tz;
-    cf["name"] = c.name; cf["wifiEnabled"] = c.wifiEnabled;
+    cf["name"] = c.name; cf["wifiEnabled"] = c.wifiEnabled; cf["fdsn"] = c.fdsnUrl;
     doc["wifiSsid"] = provisioning::storedSsid();   // current saved network (Network section)
 
     JsonObject tm = doc["time"].to<JsonObject>();
@@ -476,6 +493,7 @@ function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
     v = ""; P("clock", v);  if (v.length()) c.clock24h = (v == "24");
     v = ""; P("tz", v);     if (v.length()) c.tz = v;
     c.name = ""; P("name", c.name);   // geocode label (may be blank for raw coords)
+    v = ""; P("fdsn", v); if (v.length()) c.fdsnUrl = v;   // advanced: data-source URL
     String err;
     if (!settings::validate(c, err)) { req->send(400, "text/plain", err); return; }
     queueConfig(c);   // the main loop applies it (TZ re-apply + re-fetch) — no cross-task write

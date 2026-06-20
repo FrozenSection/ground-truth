@@ -17,6 +17,8 @@ namespace settings {
     String tz;          // POSIX TZ string
     String name;        // monitoring-location label from the geocode search
                         // ("Davis, CA"); "" when coords were hand-entered
+    String fdsnUrl;     // USGS FDSN endpoint base — configurable so a future URL change is
+                        // fixable from the web UI without a reflash (maker loses access)
   };
 
   void begin();

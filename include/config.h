@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.12.4"  // codex audit: fetch backoff, settings-race queue, eth-fresh-fail, time-src, scan, pins
+#define FIRMWARE_VERSION "0.13.0"  // configurable USGS endpoint, prefer-Ethernet route, scan cleanup, intl time zones
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -127,3 +127,8 @@
 // Reject a USGS response larger than this (defensive vs an oversized/hostile body —
 // TLS is setInsecure for v1). A legit 100-event geojson is well under this.
 #define MAX_RESP_BYTES    600000
+
+// USGS FDSN event endpoint. Stored in NVS (settings.fdsnUrl) so it can be corrected from the
+// web UI WITHOUT a reflash if USGS ever moves it — the one long-term break the maker can't
+// otherwise fix after gifting. The /fdsnws/event/1/ path is an FDSN standard, stable ~10 yr.
+#define DEFAULT_FDSN_URL  "https://earthquake.usgs.gov/fdsnws/event/1/query"
