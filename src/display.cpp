@@ -403,12 +403,13 @@ namespace {
     txt(STAT_LABEL_X, 180, mr, F_BADGE);
 
     display.drawLine(212, 192, 388, 192, GxEPD_BLACK);
-    display.drawCircle(219, 202, 3, GxEPD_BLACK); txt(230, 206, "Shallow \xC2\xB7 < 8km", F_MICRO);
-    display.fillCircle(219, 218, 3, GxEPD_BLACK); txt(230, 222, "Deep \xC2\xB7 > 8km", F_MICRO);
+    // three lines evenly distributed in the box (y192–242): ~12 px gaps, ~13 px margins.
+    display.drawCircle(219, 201, 3, GxEPD_BLACK); txt(230, 205, "Shallow \xC2\xB7 < 8km", F_MICRO);
+    display.fillCircle(219, 213, 3, GxEPD_BLACK); txt(230, 217, "Deep \xC2\xB7 > 8km", F_MICRO);
     if (seismic::recordMag() > 0) {
       char r[44]; snprintf(r, sizeof(r), "Largest: M%.1f \xC2\xB7 %s",
                            seismic::recordMag(), seismic::recordDate().c_str());
-      txt(212, 234, r, F_LABEL);                          // lifted off the footer divider
+      txt(212, 229, r, F_LABEL);
     }
   }
 

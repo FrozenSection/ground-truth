@@ -92,9 +92,9 @@ function drawMap(add,d){
  add(tx(256,180,t.c7+(t.capped?"+":""),{"font-size":38,"font-weight":700,"text-anchor":"end"}));add(tx(264,166,"IN 7 DAYS",{"font-size":9,"font-weight":700}));
  const mr=t.magLo.toFixed(1)===t.magHi.toFixed(1)?`M${t.magLo.toFixed(1)}`:`M${t.magLo.toFixed(1)} – M${t.magHi.toFixed(1)}`;add(tx(264,180,mr,{"font-size":11}));
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
- add(el("circle",{cx:219,cy:202,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,206,"Shallow · < 8km",{"font-size":10}));
- add(el("circle",{cx:219,cy:218,r:3.5,fill:"#000"}));add(tx(230,222,"Deep · > 8km",{"font-size":10}));
- if(t.recMag>0)add(tx(212,234,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));}
+ add(el("circle",{cx:219,cy:201,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,205,"Shallow · < 8km",{"font-size":10}));
+ add(el("circle",{cx:219,cy:213,r:3.5,fill:"#000"}));add(tx(230,217,"Deep · > 8km",{"font-size":10}));
+ if(t.recMag>0)add(tx(212,229,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));}
 
 // ---- Page 2: Timeline (7-day lollipop strip; mirrors src/display.cpp drawTimelinePanel) ----
 function drawTimeline(add,d){
