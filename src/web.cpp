@@ -154,14 +154,11 @@ input,select{width:100%;box-sizing:border-box;font:inherit;padding:.5rem;border:
 .row{display:flex;gap:12px}.row>div{flex:1}
 button{margin-top:14px;font:inherit;padding:.55rem 1rem;border:0;border-radius:7px;background:#333;color:#fff;cursor:pointer}
 button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
-.msg{font-size:13px;color:#1a7f37;margin-top:10px}
+.msg{font-size:13px;color:#1a7f37;margin-top:10px;margin-left:14px}
 </style></head><body><div class="wrap">
 <div class="top"><h1>Settings</h1><a href="/">‹ Display</a></div>
 
-<h2>Diagnostics</h2>
-<div class="card"><div class="kv" id="diag">loading…</div></div>
-
-<h2>Location &amp; behavior</h2>
+<h2>Location</h2>
 <div class="card"><form id="cfg">
   <label>Find location by place name</label>
   <div class="row"><div style="flex:3"><input id="place" type="text" placeholder="e.g. Davis, CA"></div>
@@ -189,6 +186,9 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
   <input type="hidden" id="manual" value="1">
   <button type="submit">Save</button><span class="msg" id="msg"></span>
 </form></div>
+
+<h2>Diagnostics</h2>
+<div class="card"><div class="kv" id="diag">loading…</div></div>
 
 <h2>Firmware</h2>
 <div class="card"><a href="/update">Open firmware update (OTA) ›</a>

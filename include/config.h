@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.8.5"   // display: space the Quiet caption off the big "Quiet" word
+#define FIRMWARE_VERSION "0.8.6"   // settings page: reorder (Location/Diagnostics/Firmware), Save msg spacing
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

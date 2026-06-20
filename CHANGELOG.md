@@ -4,6 +4,12 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.6] — 2026-06-19 · Settings page tidy-up
+- **Reordered sections** to Location → Diagnostics → Firmware → Actions (diagnostics were
+  awkwardly first; they now sit below the thing you actually edit).
+- **Renamed "Location & behavior" → "Location"** (it's really just location settings).
+- **Spaced the green "Saved ✓"** off the Save button (`.msg` margin-left).
+
 ## [0.8.5] — 2026-06-19 · Display: Quiet caption spacing
 - In the **Quiet** state, "No events in range" and the date were crammed against the big
   54px "Quiet" (both anchored at x150). They're now anchored to the measured right edge of
