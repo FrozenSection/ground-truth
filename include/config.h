@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.8.7"   // footer: moon name fits + no text-wrap (kills stray 't'); ring labels fanned
+#define FIRMWARE_VERSION "0.8.8"   // footer/map polish: moon gap, "100km" labels, aligned stat labels
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

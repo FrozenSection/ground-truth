@@ -4,6 +4,13 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.8] — 2026-06-19 · Footer/map polish
+- **Moon name** shifted right (and disc nudged left) for ~10px of space off the disc.
+- **Ring labels** tightened to "100km / 200km / 300km" (no space before the unit).
+- **Stat labels aligned.** "IN 24 H" and "IN 7 DAYS" now share one x (264). The big count
+  numeral auto-shrinks only if it would reach the label (a 2-digit count stays 36px; a
+  capped "100+" drops a size), so the labels stay aligned regardless of the count width.
+
 ## [0.8.7] — 2026-06-19 · Footer fixes: moon overflow, stray "t", ring labels
 - **Moon name no longer overflows** (and the stray "t" is gone — same bug). Long phase
   names ("Waxing crescent" = 15 ch) ran past the right edge; with Adafruit GFX text-wrap

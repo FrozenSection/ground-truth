@@ -310,7 +310,7 @@ namespace {
       float a = labBearing[i] * (float)M_PI / 180.0f;
       int lx = cx + (int)lround(rr[i] * sinf(a));
       int ly = cy - (int)lround(rr[i] * cosf(a)) + 3;   // just below the ring point
-      txtKO(lx, ly, String(lab[i]) + " km", F_MICRO);
+      txtKO(lx, ly, String(lab[i]) + "km", F_MICRO);    // no space — tighter at 9px
     }
 
     auto plot = [&](float dk, float bd, int& px, int& py) {
@@ -344,17 +344,28 @@ namespace {
     }
   }
 
+  // Big stat numeral, left-aligned at x212. Auto-shrinks so a wide value (a 2-digit
+  // count, or the capped "100+") never reaches the label column at STAT_LABEL_X —
+  // that keeps "IN 24 H" / "IN 7 DAYS" aligned regardless of the count's width.
+  static const int STAT_LABEL_X = 264;
+  void bigStat(int y, const String& s) {
+    const int budget = STAT_LABEL_X - 212 - 4;          // px available before the label
+    const GFXfont* nf = (wOf(s, F_STAT) <= budget) ? F_STAT
+                      : (wOf(s, F_TIME) <= budget) ? F_TIME : F_PLACE;
+    txt(212, y, s, nf);
+  }
+
   // ---- Page 1 content: stat column (right) ----------------------------------
   void drawStatColumn(bool timeOK) {
     display.drawLine(204, 92, 204, 241, GxEPD_BLACK);
 
-    txt(212, 130, timeOK ? String(seismic::count24h()) : String("-"), F_STAT);
-    txt(250, 116, "IN 24 H", F_MICRO);
+    bigStat(130, timeOK ? String(seismic::count24h()) : String("-"));
+    txt(STAT_LABEL_X, 116, "IN 24 H", F_MICRO);
     if (timeOK) { int f = seismic::feltCount24h();
-      txt(250, 130, f > 0 ? (String(f) + " felt nearby") : String("none felt"), F_BADGE); }
+      txt(STAT_LABEL_X, 130, f > 0 ? (String(f) + " felt nearby") : String("none felt"), F_BADGE); }
 
-    txt(212, 180, String(seismic::count7d()) + (seismic::count7dCapped() ? "+" : ""), F_STAT);
-    txt(262, 166, "IN 7 DAYS", F_MICRO);
+    bigStat(180, String(seismic::count7d()) + (seismic::count7dCapped() ? "+" : ""));
+    txt(STAT_LABEL_X, 166, "IN 7 DAYS", F_MICRO);
     float lo, hi; seismic::magRange(lo, hi);
     String mr;
     if (seismic::count7d() <= 0) mr = "--";
@@ -362,7 +373,7 @@ namespace {
       char a[8], b[8]; snprintf(a, 8, "%.1f", lo); snprintf(b, 8, "%.1f", hi);
       mr = (strcmp(a, b) == 0) ? (String("M") + a) : (String("M") + a + " - M" + b);
     }
-    txt(262, 180, mr, F_BADGE);
+    txt(STAT_LABEL_X, 180, mr, F_BADGE);
 
     display.drawLine(212, 192, 388, 192, GxEPD_BLACK);
     display.drawCircle(219, 204, 3, GxEPD_BLACK); txt(230, 208, "shallow \xC2\xB7 <8 km", F_MICRO);
@@ -447,10 +458,10 @@ namespace {
     // longest measures ~78 px and the cell allows 88 (x304..392), so all eight phase
     // names fit. ellipsize() is a hard guard so nothing can ever overrun the edge.
     astro::Moon m = astro::moon(timekeeper::now());
-    moonGlyph(289, 270, 12, m.illum, m.waxing);
-    txt(304, 266, ellipsize(m.name, F_MICRO, 88), F_MICRO);
+    moonGlyph(286, 270, 12, m.illum, m.waxing);            // disc nudged left
+    txt(308, 266, ellipsize(m.name, F_MICRO, 84), F_MICRO); // text nudged right -> ~10px gap off the disc
     char mb[20]; snprintf(mb, sizeof(mb), "%d%% \xC2\xB7 day %d", (int)lround(m.illum * 100), m.ageDays);
-    txt(304, 281, mb, F_MICRO);
+    txt(308, 281, mb, F_MICRO);
   }
 
   void beginFull() { display.setRotation(0); display.setFullWindow(); }
