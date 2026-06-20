@@ -4,6 +4,12 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.4] — 2026-06-21 · Center-justify the footer
+- **Each Sky Footer cell is now centered** in its column (time/date/location · sun ·
+  moon) — they read as tidy balanced widgets instead of left-anchored. The hero, stat
+  column, and Info table stay left-aligned (label-value / reading blocks). Web mirror
+  updated to match.
+
 ## [0.9.3] — 2026-06-21 · Hero cleanup
 - **Removed the significance / "FELT" badge.** A felt flag for a quake 100 km away wasn't
   meaningful and read as orphaned; the felt *count* still shows in the stat column.

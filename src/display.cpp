@@ -452,42 +452,53 @@ namespace {
     }
   }
 
-  // ---- persistent Sky Footer (y 242–300) ------------------------------------
+  // ---- persistent Sky Footer (y 242–300) — each cell center-justified --------
   void drawFooter(bool timeOK) {
     const auto& cfg = settings::get();
     display.drawLine(0, 242, 400, 242, GxEPD_BLACK);
     if (!timeOK) { txt(200, 276, "Setting clock...", F_BODY, 1); return; }
     display.drawLine(138, 242, 138, 300, GxEPD_BLACK);
     display.drawLine(268, 242, 268, 300, GxEPD_BLACK);
+    const int cx1 = 73, cx2 = 207, cx3 = 334;             // cell centers
 
-    // cell 1 — time / date / monitoring location
+    // cell 1 — time / date / monitoring location (centered)
     String hm = timekeeper::clockHM(cfg.clock24h);
-    txt(12, 265, hm, F_TIME);
     String ap = timekeeper::ampm(cfg.clock24h);
-    if (ap.length()) txt(12 + wOf(hm, F_TIME) + 3, 265, ap, F_BADGE);
-    txt(12, 280, timekeeper::dateStr(), F_MICRO);
-    homePin(14, 295);
-    txt(24, 295, ellipsize(settings::locLabel(), F_MICRO, 108), F_MICRO);
+    int wHm = wOf(hm, F_TIME), wAp = ap.length() ? wOf(ap, F_BADGE) + 3 : 0;
+    int x1 = cx1 - (wHm + wAp) / 2;
+    txt(x1, 265, hm, F_TIME);
+    if (ap.length()) txt(x1 + wHm + 3, 265, ap, F_BADGE);
+    txt(cx1, 280, timekeeper::dateStr(), F_MICRO, 1);
+    String loc = ellipsize(settings::locLabel(), F_MICRO, 110);
+    int xL = cx1 - (12 + wOf(loc, F_MICRO)) / 2;
+    homePin(xL, 295);
+    txt(xL + 12, 295, loc, F_MICRO);
 
-    // cell 2 — sun
-    sunGlyph(150, 261);
+    // cell 2 — sun (glyph + ↑rise / ↓set, centered as a group; daylight centered)
     astro::Sun s = astro::sun(cfg.lat, cfg.lon, timekeeper::now());
     if (s.valid) {
-      arrow(166, 258, true);  txt(174, 261, astro::hm12(s.riseMin, cfg.clock24h), F_BADGE);
-      arrow(166, 277, false); txt(174, 277, astro::hm12(s.setMin, cfg.clock24h), F_BADGE);
+      String rise = astro::hm12(s.riseMin, cfg.clock24h), set = astro::hm12(s.setMin, cfg.clock24h);
+      int tw = wOf(rise, F_BADGE); { int w2 = wOf(set, F_BADGE); if (w2 > tw) tw = w2; }
+      int gW = 14 + 4 + 6 + 2 + tw;                       // glyph gap arrow gap time
+      int gx = cx2 - gW / 2;
+      sunGlyph(gx + 7, 268);
+      int ax = gx + 14 + 4 + 3, txx = gx + 14 + 4 + 6 + 2;
+      arrow(ax, 259, true);  txt(txx, 262, rise, F_BADGE);
+      arrow(ax, 276, false); txt(txx, 279, set, F_BADGE);
       int dl = s.setMin - s.riseMin; if (dl < 0) dl += 1440;
       char b[20]; snprintf(b, sizeof(b), "Daylight: %dh %02dm", dl / 60, dl % 60);
-      txt(146, 294, b, F_MICRO);
-    } else txt(150, 272, "sun --", F_BADGE);
+      txt(cx2, 294, b, F_MICRO, 1);
+    } else txt(cx2, 272, "sun --", F_BADGE, 1);
 
-    // cell 3 — moon. Names run long ("Waxing crescent" = 15 ch); at 9px Medium the
-    // longest measures ~78 px and the cell allows 88 (x304..392), so all eight phase
-    // names fit. ellipsize() is a hard guard so nothing can ever overrun the edge.
+    // cell 3 — moon (disc + name/% group, centered). All eight phase names fit at 9px.
     astro::Moon m = astro::moon(timekeeper::now());
-    moonGlyph(286, 270, 12, m.illum, m.waxing);            // disc nudged left
-    txt(308, 266, ellipsize(m.name, F_MICRO, 84), F_MICRO); // text nudged right -> ~10px gap off the disc
+    String mname = ellipsize(m.name, F_MICRO, 84);
     char mb[20]; snprintf(mb, sizeof(mb), "%d%% \xC2\xB7 day %d", (int)lround(m.illum * 100), m.ageDays);
-    txt(308, 281, mb, F_MICRO);
+    int tW = wOf(mname, F_MICRO); { int w2 = wOf(mb, F_MICRO); if (w2 > tW) tW = w2; }
+    int gx3 = cx3 - (24 + 6 + tW) / 2;
+    moonGlyph(gx3 + 12, 270, 12, m.illum, m.waxing);
+    txt(gx3 + 30, 266, mname, F_MICRO);
+    txt(gx3 + 30, 281, mb, F_MICRO);
   }
 
   // ---- Page 3 content: Info — "B / balanced" (clock header band, y 36–116) --

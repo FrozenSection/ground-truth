@@ -73,7 +73,9 @@ Embedded as bitmap glyph tables at these exact sizes/weights:
 ---
 
 ## 3. Sky Footer — shared, Map & Timeline (y 242–300) — **locked**
-Three cells split by 1 px verticals at **x=138** and **x=268**.
+Three cells split by 1 px verticals at **x=138** and **x=268**. **Each cell's content is
+centered** in its column (centers at x≈73 / 207 / 334) — the only band that's centered;
+everything else (hero, stats, Info table) stays left-aligned.
 
 - **Cell 1 — time/date/place (x 8–138):** clock **24 px** at (12, 265) + am/pm; date
   **9 px** at (12, 280) (e.g. `Fri · Jun 20`); **home-pin glyph + monitoring location**

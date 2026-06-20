@@ -111,20 +111,24 @@ function drawTimeline(add,d){
   add(el("line",{x1:ex,y1:baseY,x2:ex,y2:ey,stroke:"#000"}));add(el("circle",{cx:ex,cy:ey,r:rad,fill:"#000"}));
   if(q.head){add(el("circle",{cx:ex,cy:ey,r:rad+2,fill:"none",stroke:"#000"}));add(tx(ex+6,ey+3,"M"+q.mag.toFixed(1),{"font-size":9}));}});}
 
-// ---- persistent footer (shared by both pages) ----
+// ---- persistent footer (shared by both pages) — each cell center-justified ----
 function drawFooter(add,d){
  add(el("line",{x1:0,y1:242,x2:400,y2:242,stroke:"#000"}));
  if(!d.timeOK){add(tx(200,276,"Waiting for time sync…",{"font-size":12,"text-anchor":"middle",fill:"#555"}));return;}
  add(el("line",{x1:138,y1:242,x2:138,y2:300,stroke:"#000"}));add(el("line",{x1:268,y1:242,x2:268,y2:300,stroke:"#000"}));
- add(tx(16,265,d.time.hm,{"font-size":24,"font-weight":700,"letter-spacing":-1}));if(d.time.ampm)add(tx(16+d.time.hm.length*14,265,d.time.ampm,{"font-size":12,"font-weight":600}));
- add(tx(16,280,d.time.date,{"font-size":11}));
- add(el("path",{d:"M16 293 l4 -5 l4 5 M17 292 v3 h6 v-3",fill:"none",stroke:"#000","stroke-width":1}));
- {let nm=(d.loc&&d.loc.name)||"";if(nm.length>20)nm=nm.slice(0,19)+"…";add(tx(27,295,nm,{"font-size":9.5,"font-weight":600}));}
- add(el("circle",{cx:159,cy:260,r:3.5,fill:"#000"}));
- [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
- if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
- else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
- if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#fff"}));add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}}
+ const C1=73,C2=207,C3=334;
+ // cell 1 — time / date / location (centered)
+ add(tx(C1,265,d.time.hm+(d.time.ampm?" "+d.time.ampm:""),{"font-size":24,"font-weight":700,"text-anchor":"middle","letter-spacing":-1}));
+ add(tx(C1,280,d.time.date,{"font-size":11,"text-anchor":"middle"}));
+ {let nm=(d.loc&&d.loc.name)||"";if(nm.length>20)nm=nm.slice(0,19)+"…";add(tx(C1,295,"⌂ "+nm,{"font-size":9.5,"font-weight":600,"text-anchor":"middle"}));}
+ // cell 2 — sun (centered)
+ if(d.sun){add(tx(C2,262,"☀ ↑"+d.sun.rise+"  ↓"+d.sun.set,{"font-size":12,"font-weight":600,"text-anchor":"middle"}));add(tx(C2,288,"Daylight: "+d.sun.day,{"font-size":11,"text-anchor":"middle"}));}
+ else add(tx(C2,272,"sun —",{"font-size":12,"text-anchor":"middle",fill:"#888"}));
+ // cell 3 — moon (disc + name/% group, centered)
+ if(d.moon){const nm=d.moon.name,pct=`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`;
+  const tW=Math.max(nm.length,pct.length)*5.4,gx=C3-(24+6+tW)/2,dc=gx+12;
+  add(el("circle",{cx:dc,cy:271,r:12,fill:"#000"}));add(el("path",{d:moon(dc,271,12,d.moon.illum,d.moon.waxing),fill:"#fff"}));add(el("circle",{cx:dc,cy:271,r:12,fill:"none",stroke:"#000"}));
+  add(tx(gx+30,266,nm,{"font-size":11.5,"font-weight":600}));add(tx(gx+30,281,pct,{"font-size":11}));}}
 
 // ---- Page 3: Info — "B / balanced" (clock header + DEVICE table) ----
 function drawInfo(add,d){
