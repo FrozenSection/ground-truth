@@ -7,6 +7,7 @@
 #include "viewstate.h"
 #include "provisioning.h"
 #include "neteth.h"
+#include "health.h"
 #include "statelock.h"
 
 #include <WiFi.h>
@@ -277,6 +278,7 @@ function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
  f("diag").innerHTML=`<b>Firmware</b><span>v${d.fw}</span><b>Status</b><span>${d.online?"online":"offline"} · synced ${d.synced}</span>`+
   `<b>IP</b><span>${d.ip}</span><b>WiFi MAC</b><span>${d.mac}</span>`+
   `<b>Ethernet</b><span>${ethTxt}</span><b>Host</b><span>${d.host}.local</span><b>Uptime</b><span>${up}</span>`+
+  `<b>Last reset</b><span>${d.resetReason||"?"}</span><b>Heap</b><span>${(d.heap/1024|0)} KB · min ${(d.heapMin/1024|0)} KB</span>`+
   `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Largest</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
  const c=d.cfg;f("lat").value=c.lat;f("lon").value=c.lon;f("radius").value=c.radiusKm;
  f("minmag").value=c.minMag;f("poll").value=c.pollMin;f("clock").value=c.clock24h?"24":"12";f("tz").value=c.tz;
@@ -350,6 +352,9 @@ function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
     eth["mac"] = neteth::mac(); eth["ip"] = neteth::ip();
     doc["synced"] = timekeeper::synced();
     doc["uptime"] = (long)(millis() / 1000);
+    doc["resetReason"] = health::resetReason();   // why it last booted (soak diagnosis)
+    doc["heap"]    = (long)health::freeHeap();
+    doc["heapMin"] = (long)health::minHeap();      // lowest-ever free heap — a leak walks this down
     doc["now"]    = ok ? (long)timekeeper::now() : 0;   // device clock — anchors the timeline window
 
     JsonObject loc = doc["loc"].to<JsonObject>();

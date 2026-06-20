@@ -13,6 +13,7 @@
 #include "viewstate.h"
 #include "display.h"
 #include "neteth.h"
+#include "health.h"
 #include "settings.h"
 #include "timekeeper.h"
 #include "seismic.h"
@@ -85,6 +86,7 @@ void setup() {
   Serial.begin(115200);
   delay(200);
   Serial.printf("\n=== %s v%s ===\n", PROJECT_NAME, FIRMWARE_VERSION);
+  health::begin();          // capture the reset reason before anything else touches state
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   viewstate::begin();
@@ -144,6 +146,8 @@ void setup() {
   Serial.println(F("[TEST] auto-entering Config mode at boot"));
   g_enterConfigRequested = true;
 #endif
+
+  health::startWatchdog();  // arm last: the blocking first-run portal/connect above must not trip it
 }
 
 void loop() {
@@ -160,6 +164,13 @@ void loop() {
   static float         appliedLon   = settings::get().lon;
   static int           lastMinute   = -1;                    // footer partial-refresh boundary
   static int           wasTimeOK    = -1;                    // full re-render when the clock lands
+
+  health::feed();   // pet the watchdog every spin (before any early return below)
+  health::tick();   // periodic heap/uptime line (self-throttled)
+
+#ifdef WDT_TEST
+  if (millis() > 12000) { Serial.println(F("[TEST] hanging the loop -> watchdog should reboot in ~30 s")); for (;;) {} }
+#endif
 
   pollButton();
 

@@ -66,13 +66,14 @@ After the first USB flash, updates can go **over WiFi** via ElegantOTA at
 `groundtruth.local/update` (upload `.pio/build/<env>/firmware.bin`).
 
 ## Status
-**v0.11.0 — display + connectivity complete and hardware-verified; on to the hardening pass.**
+**v0.12.0 — feature-complete and hardened; in the 72 h soak before 1.0.0.**
 Three on-panel views (Map · Timeline · Info) render in Public Sans on the GDEY042T81; the full
-USGS pipeline + NTP/astro + `groundtruth.local` web mirror / settings / OTA all work; and
-**dual connectivity is live** — WiFi *and* wired Ethernet (W5500), with a button-hold **Config
-mode** that makes settings reachable on any network and a WiFi on/off toggle for dorm use.
-**Remaining:** the Gate 6 hardening tail (watchdog, soak test, recovery card) → 1.0.0. See the
-roadmap.
+USGS pipeline + NTP/astro + `groundtruth.local` web mirror / settings / OTA all work; **dual
+connectivity** (WiFi *and* wired Ethernet) with a button-hold **Config mode** for settings on
+any network; and a **health layer** — task watchdog (auto-reboots a hang), reset-reason +
+heap reporting — is in and validated on hardware. See [docs/RECOVERY-CARD.md](docs/RECOVERY-CARD.md)
+for living-with-it. **Remaining:** the 72 h soak, then a unique OTA password + final PII pass →
+1.0.0. See the roadmap.
 
 ## Colophon
 Designed and built with **[Claude Code](https://www.anthropic.com/claude-code)** as

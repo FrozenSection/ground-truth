@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.11.1"  // Gate 1c: a button-hold (Config mode) also re-enables WiFi
+#define FIRMWARE_VERSION "0.12.0"  // Gate 6: health module (task watchdog + reset-reason + heap)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -87,6 +87,12 @@
 // Config mode (button-hold AP) auto-closes after this idle window so the device can't be
 // left broadcasting its setup AP indefinitely.
 #define CONFIG_AP_TIMEOUT_MS     (10UL * 60 * 1000)
+
+// ---- Health / hardening (Gate 6) ----
+// Task-watchdog timeout: must clear our longest blocking loop call (the ~15-17 s USGS
+// fetch) with margin, while still rebooting a genuine hang promptly.
+#define WDT_TIMEOUT_MS           30000UL
+#define HEALTH_LOG_EVERY_MS      (5UL * 60 * 1000)   // periodic heap/uptime line for the soak log
 
 // ---- Time ----
 #define NTP_SERVER_1   "pool.ntp.org"

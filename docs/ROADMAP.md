@@ -76,12 +76,25 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       place-name geocode, live-apply no-reboot), **ElegantOTA `/update` with basic
       auth** (only update path; no espota), mDNS, Reboot / Change-WiFi. *(km-only,
       sticky header, version badge added per review.)*
-- [~] **Gate 6 — Gift hardening.** **Done (review pass 2):** trustworthy-time gating +
-      Date fallback, async data-race mutex + keep-last-good, bounded/validated USGS
-      parse, auto-AP safety (no blocking portal / no auto-erase), settings validation,
-      OTA-password warning, CI, **button hold→confirm UI (landed with Gate 4).**
-      **Remaining:** task watchdog + reset-reason logging, distant-location field test,
-      72 h soak with forced WiFi/DNS/NTP/USGS/power failures, recovery card, → 1.0.0.
+- [~] **Gate 6 — Gift hardening.** **Done:** trustworthy-time gating + Date fallback, async
+      data-race mutex + keep-last-good, bounded/validated USGS parse, NVS `repair()` on boot,
+      no-blocking-portal recovery, settings validation, OTA-password warning, CI. **Gate 6
+      proper (v0.12.0):** `health` module — **task watchdog** on the loop task (30 s, panic-
+      reboot; validated: a forced hang reboots and the next boot reports `task watchdog`),
+      **reset-reason** capture (power-on / software / watchdog / brownout — all logged + in
+      `/api/state` + web Diagnostics), **heap watch** (free + min, periodic log). On-device
+      validation done: **distant-location** (Anchorage → 21 events, headline computed),
+      reset-reason matrix (power-on / WDT / software), keep-last-good on fetch failure,
+      WiFi↔Ethernet failover. **Recovery card:** docs/RECOVERY-CARD.md.
+      **Remaining → 1.0.0:** the **72 h soak** (maker-run — watch serial `[health]` heap line
+      + `/api/state` for unexpected reboots / heap decay; exercise WiFi/DNS/USGS/power drops),
+      then set a unique `OTA_PASSWORD` in personalization.h for the gift build, final PII pass.
+
+  **Soak-watch (72 h):** leave it running; every 5 min serial prints `[health] heap free N
+  (min M) | up S s | last reset R`. Healthy = `min` heap stops falling and levels off, `last
+  reset` stays `power-on` (no surprise reboots). A steadily-falling `min` = a leak; any
+  `task watchdog` / `panic` reset = a hang/crash to chase. Force-test recovery by pulling the
+  cable / blocking USGS and confirming it returns to live without a power-cycle.
 
 Commit per gate. (Gates landed somewhat out of order — web/OTA came early to preview
 real data; only Gate 4 and the Gate 3 leftover remain before hardening.)
