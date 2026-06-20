@@ -4,6 +4,14 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.9] — 2026-06-21 · Timeline legibility
+- **Headline magnitude label moved above its dot** (centered, edge-clamped) — it was
+  parked to the right and got lost among neighbouring lollipops. Above is always clear
+  since the headline is the tallest stalk.
+- **Folded stat line split into three spread segments** (`TODAY` left · `7-DAY MAX` center
+  · `LARGEST` right) with **bold 11 px values** — was a cramped left-justified run-on.
+  Web mirror matched.
+
 ## [0.9.8] — 2026-06-21 · Optically center the depth-key box
 - Shifted the three lines down ~3 px so the **ink** (which sits above the baseline) is
   centered in the box — symmetric baselines still read "high" because text mass is

@@ -129,8 +129,11 @@ Same hero + footer. Content is a **7-day lollipop strip-chart** (x 22–388, bas
 - Magnitude axis `M2 / M3 / M4` (right-aligned 9 px at y 205 / 167 / 129) with light dashed
   gridlines. Weekday letters along the baseline (y 238).
 - **Each quake = a vertical lollipop** from the baseline; height = magnitude, dot sized by
-  magnitude. A swarm reads as a picket fence. Headline = tallest stalk, ringed, `M3.4` label.
-- Folded stats top-left (9 px, y 112): `TODAY 0   7-DAY MAX M3.3   LARGEST M4.4`.
+  magnitude. A swarm reads as a picket fence. Headline = tallest stalk, ringed, with its
+  `M3.4` label **centered above the dot** (clear of neighbouring lollipops).
+- Three stats across the top (y 111), spread **left / center / right** so they don't run
+  together — caps label 9 px + **bold value 11 px**: `TODAY 0` · `7-DAY MAX M3.3` ·
+  `LARGEST M4.4`.
 
 ---
 

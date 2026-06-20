@@ -414,6 +414,16 @@ namespace {
     }
   }
 
+  // a Timeline stat: caps label (9 px) + bold value (11 px), anchored at (ax, y).
+  // align 0/1/2 = left / center / right — used to spread the three stats across the width.
+  void statSeg(int ax, int y, const char* label, const String& value, uint8_t align) {
+    String lab = String(label) + " ";
+    int wl = wOf(lab, F_MICRO), wv = wOf(value, F_BADGE), tot = wl + wv;
+    int x = align == 1 ? ax - tot / 2 : align == 2 ? ax - tot : ax;
+    txt(x, y, lab, F_MICRO);
+    txt(x + wl, y, value, F_BADGE);
+  }
+
   // ---- Page 2 content: 7-day lollipop strip chart ---------------------------
   void drawTimelinePanel(bool timeOK) {
     const int x0 = 22, x1 = 388, baseY = 224, topY = 124;
@@ -421,13 +431,11 @@ namespace {
     for (int i = 0; i < 3; i++) { dashedHLine(x0, gy[i], x1); txt(x0 - 4, gy[i] + 3, gl[i], F_MICRO, 2); }
     display.drawLine(x0, baseY, x1, baseY, GxEPD_BLACK);
 
+    // three stats spread left / center / right so they don't run together
     float lo, hi; seismic::magRange(lo, hi);
-    char folded[64];
-    snprintf(folded, sizeof(folded), "TODAY %s   7-DAY MAX %s   LARGEST %s",
-             timeOK ? String(seismic::count24h()).c_str() : "-",
-             seismic::count7d() > 0 ? (String("M") + String(hi, 1)).c_str() : "-",
-             seismic::recordMag() > 0 ? (String("M") + String(seismic::recordMag(), 1)).c_str() : "-");
-    txt(x0, 112, folded, F_MICRO);
+    statSeg(x0,  111, "TODAY", timeOK ? String(seismic::count24h()) : String("-"), 0);
+    statSeg(204, 111, "7-DAY MAX", seismic::count7d() > 0 ? (String("M") + String(hi, 1)) : String("-"), 1);
+    statSeg(x1,  111, "LARGEST",   seismic::recordMag() > 0 ? (String("M") + String(seismic::recordMag(), 1)) : String("-"), 2);
 
     if (!timeOK) { txt(204, 178, "Setting clock...", F_BODY, 1); return; }
 
@@ -450,8 +458,12 @@ namespace {
       int ey = magY(q.mag); int rad = q.mag >= 4 ? 4 : q.mag >= 3 ? 3 : 2;
       display.drawLine(ex, baseY, ex, ey, GxEPD_BLACK);
       display.fillCircle(ex, ey, rad, GxEPD_BLACK);
-      if ((int)i == h) { display.drawCircle(ex, ey, rad + 2, GxEPD_BLACK);
-                         txt(ex + 6, ey + 3, String("M") + String(q.mag, 1), F_MICRO); }
+      if ((int)i == h) {                                 // headline: ring + label ABOVE the
+        display.drawCircle(ex, ey, rad + 2, GxEPD_BLACK); // dot (it's the tallest, so the space
+        int lx = ex < 40 ? 40 : ex > 372 ? 372 : ex;      // above is always clear of other events)
+        int ly = ey - rad - 6; if (ly < 118) ly = 118;    // keep clear of the stat line
+        txt(lx, ly, String("M") + String(q.mag, 1), F_MICRO, 1);
+      }
     }
   }
 
