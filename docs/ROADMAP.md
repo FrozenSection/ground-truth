@@ -196,7 +196,7 @@ Implementation maps cleanly to Gate 4: Hero/SkyFooter → display functions; moo
 terminator x-radius = R·|1−2·illum|, lit-right when waxing (from the SkyFooter logic).
 
 ## Network & security posture (decided 2026-06-13)
-Priority (Scott's framing): the device must **not be a liability on any network it
+Priority: the device must **not be a liability on any network it
 joins** — especially the eventual **home** network — and that matters **more than
 locking down settings**. Keep day-to-day use **frictionless**.
 
@@ -213,7 +213,7 @@ locking down settings**. Keep day-to-day use **frictionless**.
 - **WPA2 on the `GroundTruth-Setup` AP** (not an open broadcast during provisioning).
 - TLS `setInsecure()` OK for v1 — MITM can feed *wrong data* but can't take the
   device over (display-only data into a bounded parser). Root-CA pin = optional later.
-- **Settings/config left open** (low-friction, low-stakes, auto-recoverable) per Scott
+- **Settings/config left open** (low-friction, low-stakes, auto-recoverable) per the maker
   — worst case is griefing a value or a WiFi knock-off, not compromise. Destructive
   actions (Change WiFi / Reboot) *may* share the OTA auth at near-zero friction —
   optional.

@@ -310,7 +310,7 @@ from on-device review; please fold these into the final art:
    wants a clear, non-alarming **offline / reconnecting indicator** on the normal frame,
    and the **Setup screen is now first-setup / bad-creds / deliberate-change only**.
 
-### New design requests for this round (Scott)
+### New design requests for this round
 7. **Show the monitoring location on screen** (e.g. below the map). It must hold names
    longer than "Davis, CA" — the device can monitor **anywhere** (flexibility is the
    point), so size for ~20–24 chars ("San Luis Obispo, CA"). **Make it visually distinct
