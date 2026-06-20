@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.11.0"  // Gate 1c: Config mode (AP-reachable settings) + WiFi on/off toggle
+#define FIRMWARE_VERSION "0.11.1"  // Gate 1c: a button-hold (Config mode) also re-enables WiFi
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

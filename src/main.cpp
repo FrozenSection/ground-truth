@@ -183,6 +183,10 @@ void loop() {
   if (g_enterConfigRequested && !g_configMode) {
     g_enterConfigRequested = false;
     if (!netUp) { timekeeper::begin(settings::get().tz); web::begin(); netUp = true; }
+    if (!settings::get().wifiEnabled) {        // a hold always brings WiFi back (escape hatch)
+      settings::Config c = settings::get(); c.wifiEnabled = true; settings::update(c);
+      Serial.println(F("[cfg] Config mode re-enabled WiFi"));
+    }
     web::setConfigMode(true);
     provisioning::startConfigAP();
     g_configMode = true;
