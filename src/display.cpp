@@ -106,6 +106,7 @@ void tickClock(uint8_t view, bool timeOK) {
 #include "fonts/PublicSans_Bold15px7b.h"
 #include "fonts/PublicSans_Bold11px7b.h"
 #include "fonts/PublicSans_Regular13px7b.h"
+#include "fonts/PublicSans_Bold13px7b.h"
 #include "fonts/PublicSans_Medium9px7b.h"
 #include "fonts/PublicSans_SemiBold10px7b.h"
 
@@ -115,6 +116,7 @@ void tickClock(uint8_t view, bool timeOK) {
 #define F_PLACE (&PublicSans_Bold15px7b)     // place / section heads
 #define F_BADGE (&PublicSans_Bold11px7b)     // badge / caps labels / sun-moon
 #define F_BODY  (&PublicSans_Regular13px7b)  // detail / recency / date
+#define F_VALUE (&PublicSans_Bold13px7b)     // Info-page key values (web / IP / MAC)
 #define F_MICRO (&PublicSans_Medium9px7b)    // axis / ring / micro labels
 #define F_LABEL (&PublicSans_SemiBold10px7b) // location name / "Largest"
 
@@ -475,50 +477,49 @@ namespace {
     txt(308, 281, mb, F_MICRO);
   }
 
-  // ---- Page 3 content: Info (big clock band, y 44–168) ----------------------
+  // ---- Page 3 content: Info — "B / balanced" (clock header band, y 36–116) --
+  // The clock is a left-aligned header (echoing the hero magnitude); date + monitoring
+  // location sit to its right. This band is what tickClock() partial-refreshes each minute.
   void drawInfoClock(bool timeOK) {
-    if (!timeOK) { txt(200, 110, "Setting clock...", F_BODY, 1); return; }
+    if (!timeOK) { txt(14, 92, "Setting clock...", F_PLACE); return; }
     const auto& cfg = settings::get();
     String hm = timekeeper::clockHM(cfg.clock24h);
+    txt(14, 96, hm, F_MAG);
     String ap = timekeeper::ampm(cfg.clock24h);
-    int wHm = wOf(hm, F_MAG);
-    int wAp = ap.length() ? wOf(ap, F_PLACE) + 6 : 0;
-    int x0  = 200 - (wHm + wAp) / 2;
-    txt(x0, 104, hm, F_MAG);
-    if (ap.length()) txt(x0 + wHm + 6, 88, ap, F_PLACE);
-    txt(200, 130, timekeeper::dateStr(), F_BODY, 1);
-    String loc = settings::locLabel();              // home-pin + location, centered
-    int total = 12 + wOf(loc, F_LABEL);
-    int sx = 200 - total / 2;
-    homePin(sx, 152);
-    txt(sx + 12, 152, loc, F_LABEL);
+    if (ap.length()) txt(14 + wOf(hm, F_MAG) + 6, 96, ap, F_PLACE);
+    txt(196, 70, timekeeper::dateStr(), F_BODY);
+    homePin(196, 92);
+    txt(208, 92, ellipsize(settings::locLabel(), F_BADGE, 180), F_BADGE);
   }
 
-  // Full Info page: clock band + a small device-diagnostics block so the MAC / IP /
+  // Full Info page: masthead + clock header + a two-column DEVICE table so the MAC / IP /
   // version are reachable on-glass (e.g. to register on a managed network) with no web.
   void drawInfoPanel(bool timeOK, bool online) {
-    pageDots(viewstate::current());                 // ● ○ ○
+    txt(16, 22, "GROUND TRUTH", F_LABEL);                 // masthead
+    pageDots(viewstate::current());                       // ● ○ ○
+    display.drawLine(16, 34, 384, 34, GxEPD_BLACK);
     drawInfoClock(timeOK);
-    display.drawLine(20, 168, 380, 168, GxEPD_BLACK);
+    display.drawLine(16, 116, 384, 116, GxEPD_BLACK);
+    txt(16, 137, "DEVICE", F_MICRO);
 
-    int lx = 24, vx = 122, y = 192;
-    const int dy = 18;
-    txt(lx, 180, "DEVICE", F_MICRO);
-    auto row = [&](const char* label, const String& val) {
-      txt(lx, y, label, F_MICRO);
-      txt(vx, y, val, F_BODY);
-      y += dy;
-    };
-    row("Web",      String(MDNS_HOSTNAME) + ".local");
-    row("IP",       online ? WiFi.localIP().toString() : String("--"));
-    row("WiFi MAC", WiFi.macAddress());
-    row("Ethernet", "not installed");
     unsigned long up = millis() / 1000;
-    char ub[16]; snprintf(ub, sizeof(ub), "%luh %lum", up / 3600, (up % 3600) / 60);
-    row("Firmware", String("v" FIRMWARE_VERSION "  \xC2\xB7  up ") + ub);
+    char ub[28]; snprintf(ub, sizeof(ub), "v" FIRMWARE_VERSION "  \xC2\xB7  up %luh %lum",
+                          up / 3600, (up % 3600) / 60);
     String st = online ? String("online") : String("offline - reconnecting");
     if (timeOK && seismic::hasData()) st += "  \xC2\xB7  data " + timekeeper::relative(seismic::lastFetch());
-    row("Status", st);
+
+    int y = 158;                                          // rows at 158/180/202/224/246/268
+    auto row = [&](const char* label, const String& val, bool key) {
+      txt(16, y, label, F_MICRO);
+      txt(118, y, val, key ? F_VALUE : F_BODY);           // key values (web/IP/MAC) bold
+      y += 22;
+    };
+    row("WEB",      String(MDNS_HOSTNAME) + ".local",            true);
+    row("IP",       online ? WiFi.localIP().toString() : String("--"), true);
+    row("WIFI MAC", WiFi.macAddress(),                           true);
+    row("ETHERNET", "not installed",                             false);
+    row("FIRMWARE", String(ub),                                  false);
+    row("STATUS",   st,                                          false);
   }
 
   void beginFull() { display.setRotation(0); display.setFullWindow(); }
@@ -610,7 +611,7 @@ void message(const String& title, const String& line1, const String& line2) {
 
 void tickClock(uint8_t view, bool timeOK) {
   if (view == VIEW_INFO) {
-    display.setPartialWindow(0, 44, 400, 124);    // the big clock band
+    display.setPartialWindow(0, 36, 400, 80);     // the clock-header band (between dividers)
     display.firstPage();
     do { display.fillScreen(GxEPD_WHITE); drawInfoClock(timeOK); } while (display.nextPage());
   } else {

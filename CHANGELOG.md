@@ -4,6 +4,14 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.1] — 2026-06-20 · Info page → designer variant "B / Balanced"
+- **Reworked the Info page to the designer's chosen layout (B).** `GROUND TRUTH` masthead +
+  rule; the clock becomes a **left-aligned header** (echoing the hero magnitude) with date +
+  monitoring location to its right; rule; then a clean two-column **DEVICE** table (rows at
+  22 px). The three **key values — WEB / IP / WIFI MAC — are 13 px Bold**; ETHERNET /
+  FIRMWARE / STATUS stay 13 px Regular. Added a **Bold-13 Public Sans** weight for the bold
+  values. Web mirror updated to match. (MAC stays proportional — no mono face embedded.)
+
 ## [0.9.0] — 2026-06-20 · Third view: Info page
 - **New "Info" page** (third stop in the tap cycle, `● ○ ○`): a full-screen layout with a
   big clock + date + monitoring location up top, and a **device block** below — web

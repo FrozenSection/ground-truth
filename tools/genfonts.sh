@@ -41,6 +41,7 @@ gen Bold     24   # footer time
 gen Bold     15   # place
 gen Bold     11   # badge / caps labels
 gen Regular  13   # detail / recency / date
+gen Bold     13   # Info-page key values (web / IP / MAC)
 gen Medium    9   # axis / map micro-labels
 gen SemiBold 10   # Quiet caption + monitoring location
 echo "done."

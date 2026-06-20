@@ -126,20 +126,24 @@ function drawFooter(add,d){
  else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
  if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#fff"}));add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}}
 
-// ---- Page 3: Info (big clock + device diagnostics) ----
+// ---- Page 3: Info — "B / balanced" (clock header + DEVICE table) ----
 function drawInfo(add,d){
+ add(tx(16,22,"GROUND TRUTH",{"font-size":10,"font-weight":700,"letter-spacing":2}));
  pageDots(add);
+ add(el("line",{x1:16,y1:34,x2:384,y2:34,stroke:"#000"}));
  if(d.timeOK){
-  add(tx(200,104,d.time.hm+(d.time.ampm?" "+d.time.ampm:""),{"font-size":52,"font-weight":700,"text-anchor":"middle","letter-spacing":-2}));
-  add(tx(200,130,d.time.date,{"font-size":13,"text-anchor":"middle"}));
-  add(tx(200,152,"⌂ "+((d.loc&&d.loc.name)||""),{"font-size":10,"font-weight":600,"text-anchor":"middle"}));
- } else add(tx(200,110,"Waiting for time sync…",{"font-size":13,"text-anchor":"middle",fill:"#555"}));
- add(el("line",{x1:20,y1:168,x2:380,y2:168,stroke:"#000"}));
+  add(tx(14,96,d.time.hm,{"font-size":52,"font-weight":700,"letter-spacing":-2}));
+  if(d.time.ampm)add(tx(14+d.time.hm.length*30,96,d.time.ampm,{"font-size":15,"font-weight":600}));
+  add(tx(196,70,d.time.date,{"font-size":13}));
+  add(tx(196,92,"⌂ "+((d.loc&&d.loc.name)||""),{"font-size":11,"font-weight":600}));
+ } else add(tx(14,92,"Waiting for time sync…",{"font-size":13,fill:"#555"}));
+ add(el("line",{x1:16,y1:116,x2:384,y2:116,stroke:"#000"}));
+ add(tx(16,137,"DEVICE",{"font-size":9,"font-weight":700,"letter-spacing":1.5}));
  const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
- const rows=[["Web",d.host+".local"],["IP",d.online?d.ip:"--"],["WiFi MAC",d.mac],["Ethernet","not installed"],
-  ["Firmware","v"+d.fw+"  ·  up "+up],["Status",(d.online?"online":"offline")+(d.fetch&&d.timeOK?"  ·  data "+d.fetch.rel:"")]];
- add(tx(24,180,"DEVICE",{"font-size":9,"font-weight":700,"letter-spacing":.6}));
- let y=192;rows.forEach(([l,v])=>{add(tx(24,y,l,{"font-size":9,"font-weight":700,fill:"#666"}));add(tx(122,y,esc(v),{"font-size":13}));y+=18;});}
+ const rows=[["WEB",d.host+".local",1],["IP",d.online?d.ip:"--",1],["WIFI MAC",d.mac,1],
+  ["ETHERNET","not installed",0],["FIRMWARE","v"+d.fw+"  ·  up "+up,0],
+  ["STATUS",(d.online?"online":"offline")+(d.fetch&&d.timeOK?"  ·  data "+d.fetch.rel:""),0]];
+ let y=158;rows.forEach(([l,v,k])=>{add(tx(16,y,l,{"font-size":9,"font-weight":700,fill:"#555"}));add(tx(118,y,esc(v),{"font-size":13,"font-weight":k?700:400}));y+=22;});}
 
 function render(d){const s=document.getElementById("panel");s.innerHTML="";const add=e=>s.appendChild(e);
  if(curPage==="Info"){drawInfo(add,d);return;}

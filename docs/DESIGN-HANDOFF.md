@@ -147,27 +147,27 @@ rest, not an error.
 
 ---
 
-## 7. Page 3 — "Info" · device — ⟶ **OPEN: this is the page to spiff up**
+## 7. Page 3 — "Info" · device — **variant B "Balanced" (locked, built v0.9.1)**
 A full-screen page (no shared hero/footer) so the device's identity is readable on-glass
 **with no web** — the main use is reading the **MAC** to register on a managed/dorm network,
-the **IP** to reach the web UI, and the **firmware version** for support. The clock doubles
-as a calm at-rest face. Third stop in the tap cycle.
+the **IP** to reach the web UI, and the **firmware version** for support. Third stop in the
+tap cycle. Chosen over A (clock-forward, network buried) and C (utility-first, clock folded)
+— B keeps both roles: a calm clock header *and* a complete scannable device table.
 
-As currently built (functional, deliberately plain):
-- **Clock band (y 44–168):** clock **54 px** centered at (200, 104) + am/pm; date 13 px at
-  (200, 130); **home-pin + monitoring location** 10 px at (200, 152). Partial-refreshes each
-  minute (no flash).
-- 1 px divider at y=168.
-- **Device block (y 180–290):** caps header `DEVICE` 9 px at (24, 180), then label/value
-  rows (label 9 px at x 24, value 13 px at x 122, rows every 18 px):
-  `Web  groundtruth.local` · `IP  192.168.4.30` · `WiFi MAC  14:33:5C:99:0D:CC` ·
-  `Ethernet  not installed` *(populates when the wired board lands)* · `Firmware  v0.9.0 ·
-  up 3h 12m` · `Status  online · data 4 min ago`.
+- **Masthead:** `GROUND TRUTH` caps 10 px at (16, 22). 1 px divider at y=34.
+- **Clock header band (y 36–116):** clock **54 px** left at (14, 96) + am/pm; date 13 px at
+  (196, 70); **home-pin + monitoring location** 11 px at (196, 92). This band
+  **partial-refreshes each minute** (no flash).
+- 1 px divider at y=116; `DEVICE` caps header 9 px at (16, 137).
+- **Two-column table** (label 9 px caps at x 16, value 13 px at x 118, rows every 22 px):
+  `WEB groundtruth.local` · `IP …` · `WIFI MAC …` — the three **key values are 13 px Bold**;
+  `ETHERNET not installed` *(populates when the wired board lands)* · `FIRMWARE v… · up …` ·
+  `STATUS online · data N ago` — these three are 13 px Regular. Reads from existing device
+  state (no new data).
 
-**⟶ Open for you:** make this feel designed rather than a readout. Type scale & spacing of
-the device block; whether values want a second column / right-alignment / rules between
-rows; whether the clock wants a label or a different size; whether the MAC (the important
-one) should be emphasized. Reads from existing device state — no new data needed.
+*Firmware note: MAC renders in proportional Public Sans (not the mockup's monospace — we
+don't embed a mono face); masthead has no letter-tracking (bitmap fonts are fixed-advance).
+The teardrop map-pin in the mockup is drawn as the same home-pin glyph the footer uses.*
 
 ---
 

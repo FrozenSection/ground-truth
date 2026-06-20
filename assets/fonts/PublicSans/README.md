@@ -43,5 +43,6 @@ tools/genfonts.sh           # regenerates src/fonts/PublicSans_*px7b.h
 | `PublicSans_Bold15px7b.h`     | 15 | Bold — place |
 | `PublicSans_Bold11px7b.h`     | 11 | Bold — badges / caps labels |
 | `PublicSans_Regular13px7b.h`  | 13 | Regular — detail / recency / date |
+| `PublicSans_Bold13px7b.h`     | 13 | Bold — Info-page key values (web / IP / MAC) |
 | `PublicSans_Medium9px7b.h`    |  9 | Medium — axis / ring / micro labels |
 | `PublicSans_SemiBold10px7b.h` | 10 | SemiBold — location name / "Largest" |
