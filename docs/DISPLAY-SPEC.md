@@ -1,5 +1,9 @@
 # Ground Truth — Display Design Spec
 
+> **⟶ For a designer handoff, use [`DESIGN-HANDOFF.md`](DESIGN-HANDOFF.md)** — a clean,
+> current snapshot of every page as built (v0.9.0). This file is the internal working
+> history (negotiation rounds, rationale) and is kept for reference.
+
 **Status: decisions locked (2026-06-13).** This started as an open brief; after the
 mockup round it's now the **build spec**. The §1 constraints are still hard (physical
 display); §3–§8 record the *chosen* layouts, not options. Sections marked
