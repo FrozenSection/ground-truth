@@ -225,15 +225,17 @@ namespace {
       display.drawPixel(x + (int)lround(8 * cosf(ra)), y + 2 + (int)lround(8 * sinf(ra)), GxEPD_BLACK); }
     display.drawLine(x - 8, y - 6, x + 8, y + 6, GxEPD_BLACK);
   }
-  // moon: outline + scanline-filled illuminated fraction (DISPLAY-SPEC §8).
+  // moon: outline + scanline-filled SHADOW (DISPLAY-SPEC §8). Almanac convention — the
+  // lit limb stays paper-white and the unlit part is inked, so the glyph reads like the
+  // real sky: full moon = open disc, new moon = solid black, crescent = bright sliver.
   void moonGlyph(int cx, int cy, int R, float k, bool waxing) {
     display.drawCircle(cx, cy, R, GxEPD_BLACK);
     for (int dy = -R; dy <= R; dy++) {
       int xspan = (int)lround(sqrtf((float)(R * R - dy * dy)));
       float xt = xspan * (1.0f - 2.0f * k);          // terminator x at this row
       int x0, x1;
-      if (waxing) { x0 = (int)lround(xt); x1 = xspan; }     // lit on the right
-      else        { x0 = -xspan; x1 = (int)lround(-xt); }   // lit on the left
+      if (waxing) { x0 = -xspan; x1 = (int)lround(xt); }    // lit limb on the right -> ink the left/shadow
+      else        { x0 = (int)lround(-xt); x1 = xspan; }    // lit limb on the left  -> ink the right/shadow
       if (x1 >= x0) display.drawFastHLine(cx + x0, cy + dy, x1 - x0 + 1, GxEPD_BLACK);
     }
   }

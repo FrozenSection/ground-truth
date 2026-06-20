@@ -123,7 +123,7 @@ function drawFooter(add,d){
  [[159,250,159,253],[159,267,159,270],[149,260,152,260],[166,260,169,260],[152,253,154,255],[164,265,166,267],[166,253,164,255],[154,265,152,267]].forEach(L=>add(el("line",{x1:L[0],y1:L[1],x2:L[2],y2:L[3],stroke:"#000","stroke-width":1.2})));
  if(d.sun){add(tx(176,260,"↑ "+d.sun.rise,{"font-size":12,"font-weight":600}));add(tx(176,276,"↓ "+d.sun.set,{"font-size":12,"font-weight":600}));add(tx(148,291,"Daylight: "+d.sun.day,{"font-size":11}));}
  else{add(tx(176,266,"sun —",{"font-size":12,fill:"#888"}));}
- if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}}
+ if(d.moon){add(el("circle",{cx:291,cy:271,r:12,fill:"#000"}));add(el("path",{d:moon(291,271,12,d.moon.illum,d.moon.waxing),fill:"#fff"}));add(el("circle",{cx:291,cy:271,r:12,fill:"none",stroke:"#000"}));add(tx(308,266,d.moon.name,{"font-size":11.5,"font-weight":600}));add(tx(308,281,`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`,{"font-size":11}));}}
 
 function render(d){const s=document.getElementById("panel");s.innerHTML="";const add=e=>s.appendChild(e);
  drawHero(add,d);(curPage==="Timeline"?drawTimeline:drawMap)(add,d);drawFooter(add,d);}

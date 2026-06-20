@@ -226,10 +226,13 @@ build). Keep `192.168.4.1` + auto-pop as the reliable fallback; don't rely on a 
 ## 8. Glyph construction notes (for faithful rendering)
 
 These are drawn with primitives, not image assets — design them as such:
-- **Moon:** circle outline; **illuminated fraction filled solid black**; terminator is
-  an elliptical arc with **x-radius = R·|1 − 2k|** (k = illuminated fraction), **lit on
-  the right when waxing**. (GFX has no arc-fill primitive, so firmware fills it by
-  scanline — a Gate-4 detail; the geometry is what the designer specs.)
+- **Moon:** circle outline; the **shadowed (unlit) fraction is filled solid black**, the
+  **lit limb stays paper-white** — the almanac convention, so the glyph reads like the sky
+  (full moon = open disc, new moon = solid black, crescent = bright sliver on the lit
+  limb). Terminator is an elliptical arc with **x-radius = R·|1 − 2k|** (k = illuminated
+  fraction), **lit on the right when waxing**. (GFX has no arc-fill primitive, so firmware
+  fills the shadow side by scanline; the web mirror draws a black disc and paints the lit
+  region back to paper.)
 - **Sun (footer):** small circle + short radial tick "rays."
 - **Quake dots:** solid filled circles; magnitude → radius. Headline = add a thin ring.
 - **Arrows / bearings:** simple glyphs (`↑ ↓` for sun; compass `N`).

@@ -4,6 +4,15 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.9] — 2026-06-20 · Moon glyph: almanac convention (inverted)
+- **Moon now inks the shadow, not the light.** Previously the *illuminated* fraction was
+  filled black — backwards from reality and from every almanac/weather glyph (it made a
+  full moon a solid blob and a new moon an empty circle). Now the **unlit fraction is
+  inked and the lit limb stays paper-white**, so the glyph reads like the sky: full = open
+  disc, new = solid black, crescent = bright sliver on the lit limb. Outline + terminator
+  geometry unchanged. Web mirror inverted to match (black disc, lit region painted to
+  paper). Spec §8 updated.
+
 ## [0.8.8] — 2026-06-19 · Footer/map polish
 - **Moon name** shifted right (and disc nudged left) for ~10px of space off the disc.
 - **Ring labels** tightened to "100km / 200km / 300km" (no space before the unit).
