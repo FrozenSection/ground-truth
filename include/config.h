@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.12.1"  // settings: Diagnostics below Network
+#define FIRMWARE_VERSION "0.12.2"  // SECURITY: OTA auth was disabled (begin() reset setAuth); now enforced
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

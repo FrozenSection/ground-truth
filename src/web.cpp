@@ -514,8 +514,10 @@ void begin() {
     else              r->send(404, "text/plain", "not found");
   });
 
-  ElegantOTA.setAuth(OTA_USERNAME, OTA_PASSWORD);   // /update is authenticated
-  ElegantOTA.begin(&server);
+  // Auth MUST be passed to begin(): begin(server, user="", pass="") internally calls
+  // setAuth(user, pass), so a separate setAuth() before it gets overwritten to empty
+  // (= auth disabled). /update + /ota/* are the firmware-flash endpoints — keep them locked.
+  ElegantOTA.begin(&server, OTA_USERNAME, OTA_PASSWORD);
 
   server.begin();
   Serial.printf("[web] http://%s.local/ (mirror) + /settings + /update\n", MDNS_HOSTNAME);
