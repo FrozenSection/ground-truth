@@ -4,6 +4,11 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.8] — 2026-06-21 · Optically center the depth-key box
+- Shifted the three lines down ~3 px so the **ink** (which sits above the baseline) is
+  centered in the box — symmetric baselines still read "high" because text mass is
+  top-heavy. Web mirror matched.
+
 ## [0.9.7] — 2026-06-21 · Even out the depth-key box
 - **Evenly distributed the three lines** (Shallow / Deep / Largest) in the box below the
   stat divider — ~12 px gaps, ~13 px margins top & bottom (were 14/16/12/8, which bunched

@@ -403,13 +403,14 @@ namespace {
     txt(STAT_LABEL_X, 180, mr, F_BADGE);
 
     display.drawLine(212, 192, 388, 192, GxEPD_BLACK);
-    // three lines evenly distributed in the box (y192–242): ~12 px gaps, ~13 px margins.
-    display.drawCircle(219, 201, 3, GxEPD_BLACK); txt(230, 205, "Shallow \xC2\xB7 < 8km", F_MICRO);
-    display.fillCircle(219, 213, 3, GxEPD_BLACK); txt(230, 217, "Deep \xC2\xB7 > 8km", F_MICRO);
+    // three lines, evenly spaced and shifted so the *ink* (which sits above the baseline)
+    // is optically centered in the box (y192–242), not just the baselines.
+    display.drawCircle(219, 204, 3, GxEPD_BLACK); txt(230, 208, "Shallow \xC2\xB7 < 8km", F_MICRO);
+    display.fillCircle(219, 216, 3, GxEPD_BLACK); txt(230, 220, "Deep \xC2\xB7 > 8km", F_MICRO);
     if (seismic::recordMag() > 0) {
       char r[44]; snprintf(r, sizeof(r), "Largest: M%.1f \xC2\xB7 %s",
                            seismic::recordMag(), seismic::recordDate().c_str());
-      txt(212, 229, r, F_LABEL);
+      txt(212, 232, r, F_LABEL);
     }
   }
 

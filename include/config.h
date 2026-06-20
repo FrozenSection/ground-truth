@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.9.7"   // stat box: evenly distribute Shallow/Deep/Largest
+#define FIRMWARE_VERSION "0.9.8"   // stat box: shift the 3 lines down to optically center the ink
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
