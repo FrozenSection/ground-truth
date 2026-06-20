@@ -2,6 +2,7 @@
 #include "config.h"
 
 #include <WiFi.h>
+#include <esp_mac.h>
 #include <DNSServer.h>
 #include <ESPAsyncWebServer.h>
 #include <Preferences.h>
@@ -226,7 +227,15 @@ String storedSsid() {
   return ssid;
 }
 
-String staMac() { return WiFi.macAddress(); }
+String staMac() {
+  // Read the station MAC from efuse directly — valid even before the WiFi radio starts
+  // (arduino-esp32 3.x's WiFi.macAddress() returns 00:00 until then, and the Connect
+  // screen needs this for managed-network registration).
+  uint8_t m[6]; esp_read_mac(m, ESP_MAC_WIFI_STA);
+  char b[18];
+  snprintf(b, sizeof(b), "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
+  return String(b);
+}
 
 bool ssidVisible(const String& ssid) {
   if (!ssid.length()) return false;

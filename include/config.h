@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.10.0"  // CORE UPGRADE: arduino-esp32 3.3.9 / IDF 5.5 (for W5500 Ethernet, Gate 1b)
+#define FIRMWARE_VERSION "0.10.3"  // Gate 1b: Ethernet hardened (ETH-aware fetch/MAC/IP, capped bootstrap query)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
@@ -66,6 +66,13 @@
 #define BUTTON_PIN          26
 #define BUTTON_DEBOUNCE_MS  50
 #define BUTTON_HOLD_MS      3000   // hold >= this -> arm WiFi re-provision
+
+// ---- W5500 wired Ethernet (Gate 1b) — shares the e-paper SPI bus (SCK5/MISO21/MOSI19),
+// adds its own control pins. Full wiring + wire colours in docs/WIRING.md. ----
+#define W5500_CS      4    // A5
+#define W5500_IRQ     25   // A1
+#define W5500_RST     22   // SDA
+#define W5500_SPI_MHZ 8    // 8 MHz — faster was unreliable on this board (per the NetPulse build)
 
 // ---- Views (tap cycles through these; selection persists in NVS) ----
 #define VIEW_MAP        0

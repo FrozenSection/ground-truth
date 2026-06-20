@@ -6,6 +6,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include "neteth.h"
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <math.h>
@@ -54,8 +55,13 @@ namespace {
     u += "&longitude="   + String(c.lon, 4);
     u += "&maxradiuskm=" + String(c.radiusKm);
     u += "&minmagnitude="+ String(c.minMag, 1);
-    u += "&orderby=time&limit=" + String(QUERY_LIMIT);
-    if (timekeeper::synced())
+    // Pre-sync (no clock yet) there's no starttime, so the query is all-time most-recent —
+    // a large, chunked body. Cap it small: it only needs to carry the Date header + a brief
+    // bootstrap view, and a big TLS burst can truncate over the 8 MHz W5500 link before the
+    // windowed fetch (below) takes over. Windowed fetches keep the full limit.
+    bool synced = timekeeper::synced();
+    u += "&orderby=time&limit=" + String(synced ? QUERY_LIMIT : 25);
+    if (synced)
       u += "&starttime=" + timekeeper::iso8601UTC(timekeeper::now() - 7L * 86400L);
     return u;
   }
@@ -151,7 +157,7 @@ void begin() {
 }
 
 bool fetch() {
-  if (WiFi.status() != WL_CONNECTED) return false;
+  if (WiFi.status() != WL_CONNECTED && !neteth::up()) return false;  // need either link
   String url = buildUrl();
   Serial.printf("[usgs] GET %s\n", url.c_str());
 

@@ -12,6 +12,7 @@
 #include "provisioning.h"
 #include "viewstate.h"
 #include "display.h"
+#include "neteth.h"
 #include "settings.h"
 #include "timekeeper.h"
 #include "seismic.h"
@@ -34,7 +35,7 @@ static unsigned long g_confirmUntil     = 0;       // auto-cancel deadline
 // stamps the readout when fetches have lapsed.
 static void renderCurrent() {
   bool timeOK = timekeeper::synced();
-  bool online = (WiFi.status() == WL_CONNECTED);
+  bool online = (WiFi.status() == WL_CONNECTED) || neteth::up();
   bool stale  = false;
   time_t lf = seismic::lastFetch();
   if (timeOK && seismic::hasData() && lf > 0) {
@@ -93,13 +94,24 @@ void setup() {
   seismic::begin();
   epd::begin();
   epd::splash();
-  Serial.printf("[net] station MAC: %s\n", provisioning::staMac().c_str());
+  neteth::begin();          // W5500 on the shared SPI bus (link/DHCP come async)
+  WiFi.mode(WIFI_STA);      // bring up the STA interface so its MAC is readable for the
+                            // Connect screen (3.x returns 00:00 before the radio starts)
+  Serial.printf("[net] station MAC: %s | eth MAC: %s\n",
+                provisioning::staMac().c_str(), neteth::mac().c_str());
 
   if (!provisioning::hasCreds()) {
-    // Ethernet MAC is "" until the W5500 lands (Gate 1b) — the Connect screen
-    // shows it as not-installed; the WiFi path is the only one until then.
-    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), "");
-    provisioning::openPortal();                 // blocks; reboots on save
+    // Fresh device: show the unified Connect screen (both MACs + QR). Proceed on EITHER
+    // path — wait briefly for a wired Ethernet link before blocking on the WiFi captive
+    // portal, so a plug-in-Ethernet setup (dorm) needs no phone at all.
+    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac());
+    unsigned long t0 = millis();
+    while (!neteth::up() && millis() - t0 < 15000UL) { delay(200); }
+    if (neteth::up()) {
+      Serial.println(F("[net] Ethernet up at setup -> skipping WiFi portal"));
+    } else {
+      provisioning::openPortal();               // no Ethernet -> WiFi portal (blocks; reboots on save)
+    }
   }
 
   epd::message("Connecting", "joining WiFi...");
@@ -109,7 +121,7 @@ void setup() {
   } else if (provisioning::freshlyProvisioned()) {
     // Creds entered moments ago don't connect (typo / wrong network) -> portal+error.
     Serial.println(F("[wifi] fresh creds failed -> portal"));
-    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), "", /*error=*/true);
+    epd::connectScreen(AP_NAME, AP_PASS, provisioning::staMac(), neteth::mac(), /*error=*/true);
     provisioning::openPortal();
   } else {
     // Previously-good creds not connecting (router down, transient, or moved). Do NOT
@@ -120,6 +132,13 @@ void setup() {
   }
 
   epd::message("Ground Truth", online ? "syncing time + data..." : "offline - reconnecting");
+
+#ifdef ETH_ONLY_TEST
+  // Bench validation of the dorm scenario: kill the WiFi radio so the only path to the
+  // internet is the W5500. The reconnect supervisor is a no-op with the radio off.
+  Serial.println(F("[TEST] WiFi radio OFF -> Ethernet-only path"));
+  WiFi.mode(WIFI_OFF);
+#endif
 }
 
 void loop() {
@@ -165,7 +184,7 @@ void loop() {
   if (nowMs - lastTick < TICK_INTERVAL_MS) { delay(20); return; }
   lastTick = nowMs;
 
-  bool online = (WiFi.status() == WL_CONNECTED);
+  bool online = (WiFi.status() == WL_CONNECTED) || neteth::up();
 
   // mDNS + (once) time/web services on (re)connect.
   if (online && !servicesUp) {
@@ -173,7 +192,7 @@ void loop() {
       MDNS.addService("http", "tcp", WEB_PORT);
       servicesUp = true;
       Serial.printf("[net] online -> http://%s.local  ip=%s\n",
-                    MDNS_HOSTNAME, WiFi.localIP().toString().c_str());
+                    MDNS_HOSTNAME, neteth::activeIP().c_str());
     }
   }
   if (!online && servicesUp) { MDNS.end(); servicesUp = false; }

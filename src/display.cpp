@@ -5,6 +5,8 @@
 #include "seismic.h"
 #include "astro.h"
 #include "viewstate.h"
+#include "neteth.h"    // Info page: Ethernet MAC / status
+#include "provisioning.h"  // Info page: efuse station MAC (valid radio-off)
 #include <WiFi.h>      // Info page: IP / MAC / RSSI
 #include <math.h>
 #include <time.h>
@@ -65,8 +67,9 @@ void renderView(uint8_t view, bool timeOK, bool online, bool stale) {
     frame("View: Info",
           timeOK ? (timekeeper::clockHM(settings::get().clock24h) + timekeeper::ampm(settings::get().clock24h) +
                     "  " + timekeeper::dateStr()) : String("Setting clock..."),
-          String(MDNS_HOSTNAME) + ".local   IP " + WiFi.localIP().toString(),
-          "WiFi MAC " + WiFi.macAddress() + "   Eth (not installed)",
+          String(MDNS_HOSTNAME) + ".local   IP " + neteth::activeIP(),
+          "WiFi MAC " + provisioning::staMac() +
+              (neteth::present() ? "   Eth " + neteth::mac() : "   Eth (not installed)"),
           String("v") + FIRMWARE_VERSION + (online ? "   online" : "   offline"));
     return;
   }
@@ -547,10 +550,10 @@ namespace {
     String st = online ? String("online") : String("offline - reconnecting");
     if (timeOK && seismic::hasData()) st += "  \xC2\xB7  data " + timekeeper::relative(seismic::lastFetch());
 
-    // Ethernet MAC becomes a key (bold) value like WiFi MAC once the W5500 lands (Gate 1b);
-    // until then the row reads "not installed" in the regular weight.
-    bool ethUp = false;                                   // Gate 1b: ETH link + real MAC
-    String ethVal = ethUp ? String("--") : String("not installed");
+    // Ethernet: show the W5500 MAC (a key value to register on a managed network), bold
+    // when the link is actually up; "not installed" when no board responds.
+    bool ethUp = neteth::up();
+    String ethVal = neteth::present() ? neteth::mac() : String("not installed");
 
     int y = 152;                                          // table centered under the clock divider
     auto row = [&](const char* label, const String& val, bool key) {
@@ -559,8 +562,8 @@ namespace {
       y += 22;
     };
     row("WEB",      String(MDNS_HOSTNAME) + ".local",            true);
-    row("IP",       online ? WiFi.localIP().toString() : String("--"), true);
-    row("WIFI MAC", WiFi.macAddress(),                           true);
+    row("IP",       online ? neteth::activeIP() : String("--"), true);
+    row("WIFI MAC", provisioning::staMac(),                      true);
     row("ETHERNET", ethVal,                                      ethUp);
     row("FIRMWARE", String(ub),                                  false);
     row("STATUS",   st,                                          false);

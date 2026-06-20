@@ -32,9 +32,15 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       WiFi **MAC** shown for campus registration; view-state in NVS. *(verified on a
       bare Feather via the `headless` env. The hold's two-step on-screen confirm UI
       lands with the Gate 4 display.)*
-- [ ] **Gate 1b — Ethernet (W5500), dual-connect *(needs the board)*.** Bring up W5500
-      over SPI (`ETH`); `online = WiFi || Ethernet`; expose both MACs; portal exits when
-      Ethernet links; unified Connect screen. See Network posture below.
+- [x] **Gate 1b — Ethernet (W5500), dual-connect.** DONE (2026-06-20). Required the core
+      upgrade to arduino-esp32 3.x (2.0.17 had no `ETH_PHY_W5500`); brought up via
+      `ETH.begin(ETH_PHY_W5500, 1, CS4, IRQ25, RST22, SPI, 8 MHz)` sharing the e-paper SPI
+      bus. `online = WiFi || Ethernet`; both MACs on Connect/Info + `/api/state`; portal
+      waits ~15 s for an Ethernet link before falling back to WiFi setup (wired-only needs
+      no phone); efuse station MAC (valid radio-off); `activeIP()` for the shown IP. Validated
+      live: dual-connect AND Ethernet-only (WiFi radio off) — link, DHCP, time sync, fetch,
+      web all over the W5500; serves on both IPs. Pre-sync bootstrap query capped to 25 events
+      (a large TLS burst truncated over the 8 MHz link; windowed fetch keeps the full limit).
 - [x] **Gate 2 — Seismic data.** HTTPS FDSN fetch, filtered/streamed ArduinoJson parse
       (defensive), haversine distance/bearing, **hybrid headline**, 24 h/7 d counts +
       histogram + range + felt, **swarm clustering** (≥6 within 15 km → `×n`), NVS

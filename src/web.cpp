@@ -6,6 +6,7 @@
 #include "astro.h"
 #include "viewstate.h"
 #include "provisioning.h"
+#include "neteth.h"
 #include "statelock.h"
 
 #include <WiFi.h>
@@ -144,8 +145,9 @@ function drawInfo(add,d){
  } else add(tx(14,92,"Waiting for time sync…",{"font-size":13,fill:"#555"}));
  add(el("line",{x1:16,y1:116,x2:384,y2:116,stroke:"#000"}));
  const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
+ const eth=d.eth||{},ethVal=eth.present?eth.mac:"not installed";
  const rows=[["WEB",d.host+".local",1],["IP",d.online?d.ip:"--",1],["WIFI MAC",d.mac,1],
-  ["ETHERNET","not installed",0],["FIRMWARE","v"+d.fw+"  ·  up "+up,0],
+  ["ETHERNET",ethVal,eth.up?1:0],["FIRMWARE","v"+d.fw+"  ·  up "+up,0],
   ["STATUS",(d.online?"online":"offline")+(d.fetch&&d.timeOK?"  ·  data "+d.fetch.rel:""),0]];
  let y=152;rows.forEach(([l,v,k])=>{add(tx(16,y,l,{"font-size":9,"font-weight":700,fill:"#555"}));add(tx(118,y,esc(v),{"font-size":13,"font-weight":k?700:400}));y+=22;});}
 
@@ -301,11 +303,15 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     doc["timeSrc"] = timekeeper::source();
     doc["fw"]   = FIRMWARE_VERSION;
     doc["host"] = MDNS_HOSTNAME;
-    doc["mac"]  = WiFi.macAddress();
-    doc["ip"]   = WiFi.localIP().toString();
+    doc["mac"]  = provisioning::staMac();   // efuse MAC — valid even with the radio off (ETH-only)
+    doc["ip"]   = neteth::activeIP();
     doc["rssi"] = WiFi.RSSI();
     doc["view"] = viewstate::name(viewstate::current());
-    doc["online"] = (WiFi.status() == WL_CONNECTED);
+    bool wifiUp = (WiFi.status() == WL_CONNECTED);
+    doc["online"] = wifiUp || neteth::up();
+    JsonObject eth = doc["eth"].to<JsonObject>();      // wired Ethernet (W5500)
+    eth["present"] = neteth::present(); eth["up"] = neteth::up();
+    eth["mac"] = neteth::mac(); eth["ip"] = neteth::ip();
     doc["synced"] = timekeeper::synced();
     doc["uptime"] = (long)(millis() / 1000);
     doc["now"]    = ok ? (long)timekeeper::now() : 0;   // device clock — anchors the timeline window
@@ -314,9 +320,9 @@ function act(url,q){if(confirm(q))fetch(url,{method:"POST"}).then(()=>alert("Don
     loc["lat"] = c.lat; loc["lon"] = c.lon; loc["radiusKm"] = c.radiusKm;
     loc["minMag"] = c.minMag; loc["units"] = settings::distUnit();
     loc["name"] = settings::locLabel();   // footer cell 1 + map context (geocode or coords)
-    // Hero "offline" flag: WiFi is the long-lived reconnecting state (the device no
-    // longer auto-opens the portal on a drop) — the mirror draws the slashed-WiFi glyph.
-    doc["offline"] = (WiFi.status() != WL_CONNECTED);
+    // Hero "offline" flag drives the slashed-WiFi glyph — only when BOTH links are down
+    // (the device holds the last frame and retries; it no longer auto-opens the portal).
+    doc["offline"] = !(wifiUp || neteth::up());
 
     JsonObject cf = doc["cfg"].to<JsonObject>();
     cf["manual"] = c.locManual; cf["lat"] = c.lat; cf["lon"] = c.lon;
