@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.9.10"  // fix: de-chunk USGS body (chunked >5KB parsed as 0 events -> false Quiet)
+#define FIRMWARE_VERSION "0.10.0"  // CORE UPGRADE: arduino-esp32 3.3.9 / IDF 5.5 (for W5500 Ethernet, Gate 1b)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

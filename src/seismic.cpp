@@ -3,6 +3,7 @@
 #include "settings.h"
 #include "timekeeper.h"
 
+#include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
