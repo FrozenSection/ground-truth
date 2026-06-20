@@ -4,6 +4,17 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.7] — 2026-06-19 · Footer fixes: moon overflow, stray "t", ring labels
+- **Moon name no longer overflows** (and the stray "t" is gone — same bug). Long phase
+  names ("Waxing crescent" = 15 ch) ran past the right edge; with Adafruit GFX text-wrap
+  on by default, the overflowing "t" wrapped around to x0 on the next line, landing next
+  to the date in the footer's left cell. Fixed by **disabling text-wrap globally** (a
+  fixed-layout panel should clip, never wrap to the far edge) and **rendering the phase
+  name at 9px** so all eight names fit the cell (longest measures 80px of 88; ellipsize
+  guards the edge regardless).
+- **Map ring labels fanned apart.** 100 / 200 / 300 km were stacked on one diagonal and
+  ran together; they now sit on their own ring at SW / S / SE (white-knockout, legible).
+
 ## [0.8.6] — 2026-06-19 · Settings page tidy-up
 - **Reordered sections** to Location → Diagnostics → Firmware → Actions (diagnostics were
   awkwardly first; they now sit below the thing you actually edit).

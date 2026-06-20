@@ -301,10 +301,15 @@ namespace {
     display.drawLine(cx, cy - 6, cx, cy + 6, GxEPD_BLACK);
     txt(cx, 105, "N", F_MICRO, 1);
 
-    int R = cfg.radiusKm;                           // radius-driven ring labels (SE diagonal)
+    int R = cfg.radiusKm;                           // radius-driven ring labels
     int lab[3] = {R / 3, (2 * R) / 3, R};
+    // Fan the three labels across the lower arc (SW / S / SE) so they sit on their own
+    // ring and don't stack/collide — the old single-diagonal placement ran them together.
+    const float labBearing[3] = {230.0f, 180.0f, 130.0f};
     for (int i = 0; i < 3; i++) {
-      int lx = cx + (int)lround(rr[i] * 0.70f), ly = cy + (int)lround(rr[i] * 0.70f) + 3;
+      float a = labBearing[i] * (float)M_PI / 180.0f;
+      int lx = cx + (int)lround(rr[i] * sinf(a));
+      int ly = cy - (int)lround(rr[i] * cosf(a)) + 3;   // just below the ring point
       txtKO(lx, ly, String(lab[i]) + " km", F_MICRO);
     }
 
@@ -438,12 +443,14 @@ namespace {
       txt(146, 294, b, F_MICRO);
     } else txt(150, 272, "sun --", F_BADGE);
 
-    // cell 3 — moon
+    // cell 3 — moon. Names run long ("Waxing crescent" = 15 ch); at 9px Medium the
+    // longest measures ~78 px and the cell allows 88 (x304..392), so all eight phase
+    // names fit. ellipsize() is a hard guard so nothing can ever overrun the edge.
     astro::Moon m = astro::moon(timekeeper::now());
     moonGlyph(289, 270, 12, m.illum, m.waxing);
-    txt(308, 266, m.name, F_BADGE);
+    txt(304, 266, ellipsize(m.name, F_MICRO, 88), F_MICRO);
     char mb[20]; snprintf(mb, sizeof(mb), "%d%% \xC2\xB7 day %d", (int)lround(m.illum * 100), m.ageDays);
-    txt(308, 281, mb, F_MICRO);
+    txt(304, 281, mb, F_MICRO);
   }
 
   void beginFull() { display.setRotation(0); display.setFullWindow(); }
@@ -454,6 +461,7 @@ void begin() {
   pinMode(SRAM_CS, OUTPUT); digitalWrite(SRAM_CS, HIGH);   // park unused Friend CS lines
   pinMode(SD_CS,   OUTPUT); digitalWrite(SD_CS,   HIGH);
   display.init(115200);
+  display.setTextWrap(false);   // fixed-layout panel: clip any overrun, never wrap to the far edge
   Serial.println(F("[epd] GxEPD2 GDEY042T81 ready (Gate 4 renderer)"));
 }
 
