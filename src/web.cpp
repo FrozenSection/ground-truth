@@ -67,13 +67,13 @@ function pageDots(add){PAGES.forEach((p,i)=>{const dot=el("circle",{cx:368+i*12,
 
 // ---- shared hero (page dots reflect the page you're VIEWING and are clickable) ----
 function drawHero(add,d){const h=d.headline;
- if(h&&h.badge){add(el("circle",{cx:16,cy:13,r:4,fill:"#000"}));add(tx(25,17,h.badge.toUpperCase(),{"font-size":9,"font-weight":700,"letter-spacing":.6}));}
  pageDots(add);
  if(d.offline){const ox=346,oy=15;add(el("path",{d:`M ${ox-7} ${oy-3} q 7 -7 14 0 M ${ox-4} ${oy} q 4 -4 8 0`,fill:"none",stroke:"#000","stroke-width":1.1}));add(el("circle",{cx:ox,cy:oy+2,r:1.1,fill:"#000"}));add(el("line",{x1:ox-8,y1:oy-6,x2:ox+8,y2:oy+5,stroke:"#000","stroke-width":1.3}));}
  if(h){add(tx(9,66,h.mag,{"font-size":52,"font-weight":700,"letter-spacing":-2.5}));
-  add(tx(150,32,esc(h.place),{"font-size":15,"font-weight":700}));
-  add(tx(150,64,`depth ${h.depthKm} km · ${h.distDisp} ${h.unit} ${h.bearing}`,{"font-size":13}));
-  add(tx(150,82,h.rel,{"font-size":13}));}
+  add(tx(150,34,esc(h.place).replace(/ km/g,"km"),{"font-size":15,"font-weight":700}));
+  add(tx(150,54,`depth ${h.depthKm}km${d.timeOK&&h.rel?" · "+h.rel:""}`,{"font-size":13}));
+  const home=(((d.loc&&d.loc.name)||"").split(",")[0].trim())||"home";
+  add(tx(150,72,`${h.distDisp}${h.unit} ${h.bearing} of ${esc(home)}`,{"font-size":13}));}
  else add(tx(9,60,"Quiet",{"font-size":42,"font-weight":700}));
  add(el("line",{x1:0,y1:90,x2:400,y2:90,stroke:"#000"}));}
 
@@ -92,8 +92,8 @@ function drawMap(add,d){
  add(tx(212,180,t.c7+(t.capped?"+":""),{"font-size":38,"font-weight":700}));add(tx(262,166,"IN 7 DAYS",{"font-size":9,"font-weight":700}));
  const mr=t.magLo.toFixed(1)===t.magHi.toFixed(1)?`M${t.magLo.toFixed(1)}`:`M${t.magLo.toFixed(1)} – M${t.magHi.toFixed(1)}`;add(tx(262,180,mr,{"font-size":11}));
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
- add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8 km",{"font-size":10}));
- add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8 km",{"font-size":10}));
+ add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8km",{"font-size":10}));
+ add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8km",{"font-size":10}));
  if(t.recMag>0)add(tx(212,238,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));}
 
 // ---- Page 2: Timeline (7-day lollipop strip; mirrors src/display.cpp drawTimelinePanel) ----

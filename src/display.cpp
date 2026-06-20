@@ -284,22 +284,35 @@ namespace {
     }
     const auto& q = seismic::events()[h];
 
-    String bd = seismic::badge(q);
-    if (bd.length()) { display.fillCircle(16, 12, 3, GxEPD_BLACK);
-                       bd.toUpperCase(); txt(26, 16, bd, F_BADGE); }
-    else if (stale)  { display.fillRect(11, 7, 8, 8, GxEPD_BLACK); txt(24, 16, "STALE DATA", F_BADGE); }
+    // STALE keeps the top-left slot. (The significance badge was removed — a far-away
+    // "felt" flag isn't meaningful and read as orphaned; the felt count still shows in
+    // the stat column.)
+    if (stale) { display.fillRect(11, 7, 8, 8, GxEPD_BLACK); txt(24, 16, "STALE DATA", F_BADGE); }
 
     txt(9, 66, String("M") + String(q.mag, 1), F_MAG);
 
-    String a, b; wrap2(q.place, F_PLACE, 392 - 150, a, b);
-    if (b.length()) { txt(150, 28, a, F_PLACE); txt(150, 46, b, F_PLACE); }
-    else            { txt(150, 36, a, F_PLACE); }
+    // place = the quake's own USGS location; tighten "N km" -> "Nkm" (global rule).
+    String place = q.place; place.replace(" km", "km");
+    String a, b; wrap2(place, F_PLACE, 392 - 150, a, b);
+    int y2, y3;                                          // baselines for the two detail lines
+    if (b.length()) { txt(150, 28, a, F_PLACE); txt(150, 44, b, F_PLACE); y2 = 62; y3 = 80; }
+    else            { txt(150, 34, a, F_PLACE);                          y2 = 52; y3 = 70; }
 
-    char det[56];
-    snprintf(det, sizeof(det), "depth %d km \xC2\xB7 %d km %s",
-             (int)lround(q.depthKm), (int)lround(q.distKm), seismic::bearingName(q.bearingDeg));
-    txt(150, 64, det, F_BODY);
-    if (timeOK) txt(150, 82, timekeeper::relative(q.t), F_BODY);   // dropped in "Acquiring time"
+    // line: depth + recency ("X ago" dropped in the Acquiring-time state)
+    char det[40];
+    if (timeOK) snprintf(det, sizeof(det), "depth %dkm \xC2\xB7 %s",
+                         (int)lround(q.depthKm), timekeeper::relative(q.t).c_str());
+    else        snprintf(det, sizeof(det), "depth %dkm", (int)lround(q.depthKm));
+    txt(150, y2, det, F_BODY);
+
+    // line: distance + bearing FROM the monitoring location, named so it's unambiguous.
+    String home = settings::get().name; int cma = home.indexOf(',');
+    if (cma > 0) home = home.substring(0, cma);          // city part of "Davis, CA"
+    home.trim(); if (!home.length()) home = "home";      // hand-entered coords
+    char dist[48];
+    snprintf(dist, sizeof(dist), "%dkm %s of %s",
+             (int)lround(q.distKm), seismic::bearingName(q.bearingDeg), home.c_str());
+    txt(150, y3, dist, F_BODY);
     display.drawLine(0, 90, 400, 90, GxEPD_BLACK);
   }
 
@@ -389,8 +402,8 @@ namespace {
     txt(STAT_LABEL_X, 180, mr, F_BADGE);
 
     display.drawLine(212, 192, 388, 192, GxEPD_BLACK);
-    display.drawCircle(219, 204, 3, GxEPD_BLACK); txt(230, 208, "shallow \xC2\xB7 <8 km", F_MICRO);
-    display.fillCircle(219, 220, 3, GxEPD_BLACK); txt(230, 224, "deep \xC2\xB7 >=8 km", F_MICRO);
+    display.drawCircle(219, 204, 3, GxEPD_BLACK); txt(230, 208, "shallow \xC2\xB7 <8km", F_MICRO);
+    display.fillCircle(219, 220, 3, GxEPD_BLACK); txt(230, 224, "deep \xC2\xB7 >=8km", F_MICRO);
     if (seismic::recordMag() > 0) {
       char r[44]; snprintf(r, sizeof(r), "Largest: M%.1f \xC2\xB7 %s",
                            seismic::recordMag(), seismic::recordDate().c_str());

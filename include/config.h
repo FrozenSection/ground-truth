@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.9.2"   // Info page: drop orphaned DEVICE header, center table, eth-bold-when-installed
+#define FIRMWARE_VERSION "0.9.3"   // hero: drop FELT badge, tighten lines, "Nkm DIR of <home>", no-space km global
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

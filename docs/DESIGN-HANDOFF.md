@@ -49,6 +49,8 @@ Embedded as bitmap glyph tables at these exact sizes/weights:
   extend the font): the swarm count renders **`xN`** (lowercase x), not `×N`; the
   magnitude range uses a hyphen `-`, not an en-dash; the **`·` mid-dot is drawn as a small
   filled circle**. If you want true `×` / `–` / `·` glyphs, say so and we'll widen the range.
+- **Distances render with no space before the unit** — `4km`, `107km`, `8km`, `<8km`
+  (consistent everywhere, incl. the map rings).
 
 ---
 
@@ -134,12 +136,16 @@ Same hero + footer. Content is a **7-day lollipop strip-chart** (x 22–388, bas
 | Element | Spec |
 |---|---|
 | Magnitude | **54 px** bold, left, baseline (9, 66) — e.g. `M3.3` |
-| Place | 15 px bold, right column x≈150, **2-line clamp** (USGS strings run long) |
-| Detail | 13 px at (150, 64) — `depth 4 km · 107 km W` |
-| Recency | 13 px at (150, 82) — `2 days ago` |
-| Significance badge | filled dot (16,12) + caps `FELT NEARBY` 11 px at (26,16); doubles as `STALE DATA` stamp |
+| Place | 15 px bold, right column x≈150, **2-line clamp** — the quake's USGS location, e.g. `8km ESE of Cloverdale, CA` |
+| Depth + recency | 13 px — `depth 4km · 2 days ago` |
+| Distance from home | 13 px — `107km W of Davis` (bearing/distance from the *monitoring* location, named so it's unambiguous) |
+| Stale stamp | filled square (11,7) + `STALE DATA` 11 px at (24,16) — **only** when data is old |
 | Page indicator | `● ○ ○` top-right |
 | Offline indicator | slashed-WiFi glyph top-right (left of the dots) when reconnecting |
+
+The two detail lines sit **tight under the place** (no extra blank line). **No
+significance / "FELT" badge** — a far-away felt flag wasn't meaningful and read as orphaned;
+the felt *count* still lives in the stat column.
 
 **Quiet state** (no events, common): big `Quiet` (54 px) at (9, 64); `No events in range`
 (15 px) + date set to the right of the word; rings still drawn. Reads as the instrument at

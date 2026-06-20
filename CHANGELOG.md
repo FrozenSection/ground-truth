@@ -4,6 +4,18 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.3] — 2026-06-21 · Hero cleanup
+- **Removed the significance / "FELT" badge.** A felt flag for a quake 100 km away wasn't
+  meaningful and read as orphaned; the felt *count* still shows in the stat column.
+- **Tightened the hero** — dropped the blank line under the place (the 15 px place is enough
+  hierarchy).
+- **Clarified the home-relative distance.** The detail lines are now `depth 4km · 2 days
+  ago` and **`107km W of Davis`** — naming the monitoring location so the bearing/distance
+  is unambiguous (was a bare `107 km W`). The home name comes from the location label (city
+  part, or a custom label like "Home").
+- **Dropped the space before "km" globally** — `4km` / `107km` / `8km` / `<8km`, consistent
+  with the map rings (including the USGS place string). Web mirror + handoff doc updated.
+
 ## [0.9.2] — 2026-06-20 · Info page polish
 - **Dropped the orphaned `DEVICE` section header** — it labeled a single self-evident
   section; the table now centers in the space below the clock divider.
