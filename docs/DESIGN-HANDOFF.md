@@ -158,12 +158,13 @@ tap cycle. Chosen over A (clock-forward, network buried) and C (utility-first, c
 - **Clock header band (y 36–116):** clock **54 px** left at (14, 96) + am/pm; date 13 px at
   (196, 70); **home-pin + monitoring location** 11 px at (196, 92). This band
   **partial-refreshes each minute** (no flash).
-- 1 px divider at y=116; `DEVICE` caps header 9 px at (16, 137).
-- **Two-column table** (label 9 px caps at x 16, value 13 px at x 118, rows every 22 px):
-  `WEB groundtruth.local` · `IP …` · `WIFI MAC …` — the three **key values are 13 px Bold**;
-  `ETHERNET not installed` *(populates when the wired board lands)* · `FIRMWARE v… · up …` ·
-  `STATUS online · data N ago` — these three are 13 px Regular. Reads from existing device
-  state (no new data).
+- 1 px divider at y=116.
+- **Two-column table**, centered in the lower region (label 9 px caps at x 16, value 13 px
+  at x 118, rows every 22 px from y≈152): `WEB groundtruth.local` · `IP …` · `WIFI MAC …` —
+  these **key values are 13 px Bold**; `ETHERNET not installed` · `FIRMWARE v… · up …` ·
+  `STATUS online · data N ago` are 13 px Regular. (No standalone `DEVICE` section header —
+  single-section, the rows are self-labeling.) **The Ethernet MAC joins the bold key values
+  once the W5500 is installed** (Gate 1b). Reads from existing device state (no new data).
 
 *Firmware note: MAC renders in proportional Public Sans (not the mockup's monospace — we
 don't embed a mono face); masthead has no letter-tracking (bitmap fonts are fixed-advance).

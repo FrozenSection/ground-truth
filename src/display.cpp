@@ -500,7 +500,6 @@ namespace {
     display.drawLine(16, 34, 384, 34, GxEPD_BLACK);
     drawInfoClock(timeOK);
     display.drawLine(16, 116, 384, 116, GxEPD_BLACK);
-    txt(16, 137, "DEVICE", F_MICRO);
 
     unsigned long up = millis() / 1000;
     char ub[28]; snprintf(ub, sizeof(ub), "v" FIRMWARE_VERSION "  \xC2\xB7  up %luh %lum",
@@ -508,16 +507,21 @@ namespace {
     String st = online ? String("online") : String("offline - reconnecting");
     if (timeOK && seismic::hasData()) st += "  \xC2\xB7  data " + timekeeper::relative(seismic::lastFetch());
 
-    int y = 158;                                          // rows at 158/180/202/224/246/268
+    // Ethernet MAC becomes a key (bold) value like WiFi MAC once the W5500 lands (Gate 1b);
+    // until then the row reads "not installed" in the regular weight.
+    bool ethUp = false;                                   // Gate 1b: ETH link + real MAC
+    String ethVal = ethUp ? String("--") : String("not installed");
+
+    int y = 152;                                          // table centered under the clock divider
     auto row = [&](const char* label, const String& val, bool key) {
       txt(16, y, label, F_MICRO);
-      txt(118, y, val, key ? F_VALUE : F_BODY);           // key values (web/IP/MAC) bold
+      txt(118, y, val, key ? F_VALUE : F_BODY);           // key values (web/IP/MAC[/eth]) bold
       y += 22;
     };
     row("WEB",      String(MDNS_HOSTNAME) + ".local",            true);
     row("IP",       online ? WiFi.localIP().toString() : String("--"), true);
     row("WIFI MAC", WiFi.macAddress(),                           true);
-    row("ETHERNET", "not installed",                             false);
+    row("ETHERNET", ethVal,                                      ethUp);
     row("FIRMWARE", String(ub),                                  false);
     row("STATUS",   st,                                          false);
   }

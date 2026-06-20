@@ -4,6 +4,12 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.2] — 2026-06-20 · Info page polish
+- **Dropped the orphaned `DEVICE` section header** — it labeled a single self-evident
+  section; the table now centers in the space below the clock divider.
+- **Ethernet MAC will render bold** (a key value, like WiFi MAC) **once the W5500 is
+  installed** (Gate 1b); until then it stays "not installed" in the regular weight.
+
 ## [0.9.1] — 2026-06-20 · Info page → designer variant "B / Balanced"
 - **Reworked the Info page to the designer's chosen layout (B).** `GROUND TRUTH` masthead +
   rule; the clock becomes a **left-aligned header** (echoing the hero magnitude) with date +

@@ -138,12 +138,11 @@ function drawInfo(add,d){
   add(tx(196,92,"⌂ "+((d.loc&&d.loc.name)||""),{"font-size":11,"font-weight":600}));
  } else add(tx(14,92,"Waiting for time sync…",{"font-size":13,fill:"#555"}));
  add(el("line",{x1:16,y1:116,x2:384,y2:116,stroke:"#000"}));
- add(tx(16,137,"DEVICE",{"font-size":9,"font-weight":700,"letter-spacing":1.5}));
  const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
  const rows=[["WEB",d.host+".local",1],["IP",d.online?d.ip:"--",1],["WIFI MAC",d.mac,1],
   ["ETHERNET","not installed",0],["FIRMWARE","v"+d.fw+"  ·  up "+up,0],
   ["STATUS",(d.online?"online":"offline")+(d.fetch&&d.timeOK?"  ·  data "+d.fetch.rel:""),0]];
- let y=158;rows.forEach(([l,v,k])=>{add(tx(16,y,l,{"font-size":9,"font-weight":700,fill:"#555"}));add(tx(118,y,esc(v),{"font-size":13,"font-weight":k?700:400}));y+=22;});}
+ let y=152;rows.forEach(([l,v,k])=>{add(tx(16,y,l,{"font-size":9,"font-weight":700,fill:"#555"}));add(tx(118,y,esc(v),{"font-size":13,"font-weight":k?700:400}));y+=22;});}
 
 function render(d){const s=document.getElementById("panel");s.innerHTML="";const add=e=>s.appendChild(e);
  if(curPage==="Info"){drawInfo(add,d);return;}
