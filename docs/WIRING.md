@@ -49,6 +49,12 @@ to link (debuggable), it can't damage anything.
 > W5500 **IRQ** goes to **`A1 / DAC1`** (GPIO 25) — the pad immediately to its right. That's
 > the only spot a W5500 wire sits next to the button. No other W5500 pin touches A0.
 
+> **One GND pad, shared.** The Feather V2 exposes a single header `GND` (top row, between
+> `NC` and `A0`), already used by the button. Ground is a common net, so don't hunt for a
+> second pin — **junction the button's and the W5500's ground wires and run one lead into
+> `GND`** (or solder both into the same pad). The W5500 needs only that one ground; leave
+> its `3.3V` pad open.
+
 ### Critical: VIN = 3 V, not 5 V
 The breakout level-shifts its SPI lines to whatever **VIN** is. Powered at 5 V it would
 drive **MISO into the ESP32 at 5 V and destroy the pin.** Use the Feather's **3V** pad
