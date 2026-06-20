@@ -238,7 +238,7 @@ flagged ⟵ NEW / ⟵ CHANGED below.
 | **Connecting / reconnecting** | WiFi lost (router reboot, transient, or a move) | Keep the last good frame + a **small offline/`reconnecting` indicator**; the device retries STA indefinitely. **⟵ CHANGED: it never auto-opens the setup AP anymore** — so this is the long-lived state on any outage, and deserves a clear, non-alarming indicator on the normal frame. |
 | **Stale data** | fetch failing, data old | Keep last readout + filled `■ STALE DATA` stamp + `as of 2:10 pm`. |
 | **Quiet / no events** (common!) | nothing meets filters | Big `Quiet`, `Nearest M2.5+ is 410 km away`, rings still drawn with the distant event pinned just outside. Reads as the instrument at rest, not an error. |
-| **Change WiFi? (confirm)** | after a 3 s hold | Static `Change WiFi?` + current SSID + `■ Tap to confirm` / `□ Do nothing to cancel`. No animation. |
+| **Config mode** | after a 3 s hold (Gate 1c — replaced the old Change-WiFi confirm) | Show the Connect/Setup screen (join `GroundTruth-Setup` + QR, both MACs); the full settings page is reachable at `192.168.4.1`. A tap exits; auto-closes after 10 min. |
 
 **WiFi QR (Setup screen):** encode the join string
 `WIFI:T:WPA;S:GroundTruth-Setup;P:‹AP_PASS›;;` so scanning joins the WPA2 setup AP and

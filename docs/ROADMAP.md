@@ -28,10 +28,9 @@ it, walked through by phone). Gate 6 ships a one-page "if something goes wrong" 
       orientation, BUSY→27 + button→26 confirmed. *(tagged `gate-0`)*
 - [x] **Gate 1 — Connectivity + input.** WPA2 captive portal (ported from countdown/
       AirBox), NVS params, **auto-AP fallback**, transient-vs-persistent reconnect;
-      smart-button driver (GPIO 26, tap = next view / hold ≈ 3 s = re-provision);
+      smart-button driver (GPIO 26, tap = next view / hold ≈ 3 s = Config mode, per Gate 1c);
       WiFi **MAC** shown for campus registration; view-state in NVS. *(verified on a
-      bare Feather via the `headless` env. The hold's two-step on-screen confirm UI
-      lands with the Gate 4 display.)*
+      bare Feather via the `headless` env.)*
 - [x] **Gate 1b — Ethernet (W5500), dual-connect.** DONE (2026-06-20). Required the core
       upgrade to arduino-esp32 3.x (2.0.17 had no `ETH_PHY_W5500`); brought up via
       `ETH.begin(ETH_PHY_W5500, 1, CS4, IRQ25, RST22, SPI, 8 MHz)` sharing the e-paper SPI
@@ -139,12 +138,12 @@ view registry → room for a Page 3 later (recent-quakes list / astro page).
 
 **Input — single smart button (no EN reset).** One Gebildet 7 mm momentary on a free
 GPIO, `INPUT_PULLUP` → GND:
-- **Tap** → next view (wraps; saved to NVS so it persists).
-- **Hold ~3 s → two-step discrete-frame confirm**, NOT a live countdown (e-paper is
-  too slow to animate one — full refresh ~1–2 s, partial ~0.3–0.5 s). Hold draws a
-  static "Change WiFi? Tap to confirm · ignore to cancel" frame; a confirming tap
-  wipes creds + reboots to portal, else it auto-cancels (~15 s). Two deliberate
-  actions = accidental-brush safe.
+- **Tap** → next view (wraps; saved to NVS so it persists). In Config mode, a tap exits.
+- **Hold ~3 s → Config mode** (Gate 1c, superseded the old Change-WiFi confirm): the device
+  raises its own AP beside the running web server + captive DNS, so the **full settings page
+  is reachable at 192.168.4.1** from a phone — works on any venue network (dorm isolation
+  can't block a direct join). Non-destructive (was wipe-creds-and-reboot); also re-enables
+  WiFi. Forgetting/changing the network now lives in that web UI. Auto-closes after 10 min.
 - No hardware-reset button: the **watchdog** catches hangs and a **power-cycle** is
   the manual reset. (Drops the charter's EN-button backstop by decision.)
 - **Input ack on a laggy display:** **no LED** (decided 2026-06-13 — enclosure is

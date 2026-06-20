@@ -209,7 +209,7 @@ The teardrop map-pin in the mockup is drawn as the same home-pin glyph the foote
 | **Reconnecting** | WiFi lost → keep the last good frame + a small **slashed-WiFi** glyph; retries indefinitely (long-lived offline state). |
 | **Stale data** | fetch failing → keep last readout + `■ STALE DATA` stamp. |
 | **Quiet / no events** | common — big `Quiet` + nearest context; rings still drawn. |
-| **Change WiFi? (confirm)** | after a 3 s button hold: `Change WiFi?` + current SSID + `■ Tap to confirm` / `□ wait to cancel`. |
+| **Config mode** | after a 3 s button hold: the Connect/Setup screen (join `GroundTruth-Setup` + QR, both MACs) — the full settings page is then reachable at `192.168.4.1`. A tap exits. |
 
 ---
 
