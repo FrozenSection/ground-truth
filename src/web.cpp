@@ -216,9 +216,6 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
   <button type="submit">Save</button><span class="msg" id="msg"></span>
 </form></div>
 
-<h2>Diagnostics</h2>
-<div class="card"><div class="kv" id="diag">loading…</div></div>
-
 <h2>Network</h2>
 <div class="card">
   <div class="row"><div><label>WiFi radio</label>
@@ -237,6 +234,9 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
   <button class="warn" onclick="act('/api/wifi/reset','Forget the saved WiFi network and reopen the setup portal?')">Forget network</button>
   <p class="msg" id="wmsg"></p>
 </div>
+
+<h2>Diagnostics</h2>
+<div class="card"><div class="kv" id="diag">loading…</div></div>
 
 <h2>Firmware</h2>
 <div class="card"><a href="/update">Open firmware update (OTA) ›</a>
