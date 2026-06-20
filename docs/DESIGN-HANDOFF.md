@@ -112,14 +112,14 @@ column** (right).
   `xN`). Headline always breaks out as its own dot.
 
 **Stat column** (x 205–392):
-- **`3`** (36 px) at (212, 130) = 24 h count; label **`IN 24 H`** 9 px at (264, 116);
-  `1 felt nearby` / `none felt` 11 px at (264, 130).
-- **`18`** (36 px) at (212, 180) = 7 d count; label **`IN 7 DAYS`** 9 px at (264, 166);
-  magnitude range `M2.7 - M3.3` 11 px at (264, 180).
-- The two labels **align at x=264**; the big numeral auto-shrinks if it would otherwise
-  reach the label (so a capped `100+` never collides).
-- 1 px divider (212, 192)→(388, 192), then a **depth key**: hollow ○ `shallow · <8 km`,
-  filled ● `deep · ≥8 km` (9 px).
+- **`3`** (36 px, **right-aligned** to x≈256) = 24 h count; label **`IN 24H`** 9 px at
+  (264, 116); `1 felt nearby` / `none felt` 11 px at (264, 130).
+- **`18`** (36 px, right-aligned to x≈256) = 7 d count; label **`IN 7 DAYS`** 9 px at
+  (264, 166); magnitude range `M2.7 - M3.3` 11 px at (264, 180).
+- The numerals are **right-aligned** (padded off the center divider, snug to the labels at
+  x=264); they auto-shrink if a wide value (`100+`) would otherwise cross the divider.
+- 1 px divider (212, 192)→(388, 192), then a **depth key**: hollow ○ `Shallow · < 8km`,
+  filled ● `Deep · > 8km` (9 px).
 - One line **`Largest: M4.8 · May 3`** 10 px at (212, 238) — all-time max since power-on.
 
 ---

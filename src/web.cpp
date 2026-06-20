@@ -88,12 +88,12 @@ function drawMap(add,d){
  (d.clusters||[]).forEach(c=>{const [x,y]=plot(c.dk,c.bd);add(el("circle",{cx:x,cy:y,r:10,fill:"none",stroke:"#000","stroke-dasharray":"2 2.5"}));add(el("circle",{cx:x,cy:y,r:5,fill:"#000"}));add(tx(+x+10,+y-6,"×"+c.n,{"font-size":11,"font-weight":700}));});
  {const hq=(d.events||[]).find(q=>q.head);if(hq){const [x,y]=plot(hq.dk,hq.bd);add(el("circle",{cx:x,cy:y,r:8.5,fill:"none",stroke:"#000"}));add(el("circle",{cx:x,cy:y,r:6,fill:"none",stroke:"#000"}));add(el("circle",{cx:x,cy:y,r:4,fill:"#000"}));}}
  const t=d.stats;
- add(tx(212,130,d.timeOK?t.c24:"—",{"font-size":38,"font-weight":700}));add(tx(250,116,"IN 24 H",{"font-size":9,"font-weight":700}));add(tx(250,130,d.timeOK?(t.felt24>0?`${t.felt24} felt nearby`:"none felt"):"",{"font-size":11}));
- add(tx(212,180,t.c7+(t.capped?"+":""),{"font-size":38,"font-weight":700}));add(tx(262,166,"IN 7 DAYS",{"font-size":9,"font-weight":700}));
- const mr=t.magLo.toFixed(1)===t.magHi.toFixed(1)?`M${t.magLo.toFixed(1)}`:`M${t.magLo.toFixed(1)} – M${t.magHi.toFixed(1)}`;add(tx(262,180,mr,{"font-size":11}));
+ add(tx(256,130,d.timeOK?t.c24:"—",{"font-size":38,"font-weight":700,"text-anchor":"end"}));add(tx(264,116,"IN 24H",{"font-size":9,"font-weight":700}));add(tx(264,130,d.timeOK?(t.felt24>0?`${t.felt24} felt nearby`:"none felt"):"",{"font-size":11}));
+ add(tx(256,180,t.c7+(t.capped?"+":""),{"font-size":38,"font-weight":700,"text-anchor":"end"}));add(tx(264,166,"IN 7 DAYS",{"font-size":9,"font-weight":700}));
+ const mr=t.magLo.toFixed(1)===t.magHi.toFixed(1)?`M${t.magLo.toFixed(1)}`:`M${t.magLo.toFixed(1)} – M${t.magHi.toFixed(1)}`;add(tx(264,180,mr,{"font-size":11}));
  add(el("line",{x1:212,y1:192,x2:388,y2:192,stroke:"#000","stroke-width":.8}));
- add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"shallow · <8km",{"font-size":10}));
- add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"deep · ≥8km",{"font-size":10}));
+ add(el("circle",{cx:219,cy:204,r:3.5,fill:"none",stroke:"#000"}));add(tx(230,208,"Shallow · < 8km",{"font-size":10}));
+ add(el("circle",{cx:219,cy:220,r:3.5,fill:"#000"}));add(tx(230,224,"Deep · > 8km",{"font-size":10}));
  if(t.recMag>0)add(tx(212,238,`Largest: M${t.recMag.toFixed(1)} · ${t.recDate}`,{"font-size":9.5,"font-weight":600}));}
 
 // ---- Page 2: Timeline (7-day lollipop strip; mirrors src/display.cpp drawTimelinePanel) ----
@@ -122,7 +122,7 @@ function drawFooter(add,d){
  add(tx(C1,280,d.time.date,{"font-size":11,"text-anchor":"middle"}));
  {let nm=(d.loc&&d.loc.name)||"";if(nm.length>20)nm=nm.slice(0,19)+"…";add(tx(C1,295,"⌂ "+nm,{"font-size":9.5,"font-weight":600,"text-anchor":"middle"}));}
  // cell 2 — sun (centered)
- if(d.sun){add(tx(C2,262,"☀ ↑"+d.sun.rise+"  ↓"+d.sun.set,{"font-size":12,"font-weight":600,"text-anchor":"middle"}));add(tx(C2,288,"Daylight: "+d.sun.day,{"font-size":11,"text-anchor":"middle"}));}
+ if(d.sun){add(tx(C2,262,"☀   ↑"+d.sun.rise+"  ↓"+d.sun.set,{"font-size":12,"font-weight":600,"text-anchor":"middle"}));add(tx(C2,288,"Daylight: "+d.sun.day,{"font-size":11,"text-anchor":"middle"}));}
  else add(tx(C2,272,"sun —",{"font-size":12,"text-anchor":"middle",fill:"#888"}));
  // cell 3 — moon (disc + name/% group, centered)
  if(d.moon){const nm=d.moon.name,pct=`${Math.round(d.moon.illum*100)}% · day ${d.moon.age}`;

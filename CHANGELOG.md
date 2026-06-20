@@ -4,6 +4,13 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.9.5] — 2026-06-21 · Stat column + footer polish
+- **Stat counts right-aligned** (x≈256) — padded off the center divider and snug to the
+  labels, instead of hugging the divider with a wide gap. `IN 24 H` → `IN 24H`.
+- **Depth key**: `Shallow · < 8km` / `Deep · > 8km` — capitalized, dropped the `≥`/`=`
+  (immaterial on a desk device), and a space before `8km` for legibility.
+- **Footer sun**: a touch more space between the sun glyph and the rise/set times.
+
 ## [0.9.4] — 2026-06-21 · Center-justify the footer
 - **Each Sky Footer cell is now centered** in its column (time/date/location · sun ·
   moon) — they read as tidy balanced widgets instead of left-anchored. The hero, stat

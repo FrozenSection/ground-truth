@@ -373,12 +373,13 @@ namespace {
   // Big stat numeral, left-aligned at x212. Auto-shrinks so a wide value (a 2-digit
   // count, or the capped "100+") never reaches the label column at STAT_LABEL_X —
   // that keeps "IN 24 H" / "IN 7 DAYS" aligned regardless of the count's width.
-  static const int STAT_LABEL_X = 264;
+  static const int STAT_NUM_R   = 256;                  // numeral RIGHT edge (right-aligned:
+  static const int STAT_LABEL_X = 264;                  // padded off the divider, snug to labels)
   void bigStat(int y, const String& s) {
-    const int budget = STAT_LABEL_X - 212 - 4;          // px available before the label
+    const int budget = STAT_NUM_R - 208;                // divider+margin .. numeral right edge
     const GFXfont* nf = (wOf(s, F_STAT) <= budget) ? F_STAT
                       : (wOf(s, F_TIME) <= budget) ? F_TIME : F_PLACE;
-    txt(212, y, s, nf);
+    txt(STAT_NUM_R, y, s, nf, 2);                       // align 2 = right
   }
 
   // ---- Page 1 content: stat column (right) ----------------------------------
@@ -386,7 +387,7 @@ namespace {
     display.drawLine(204, 92, 204, 241, GxEPD_BLACK);
 
     bigStat(130, timeOK ? String(seismic::count24h()) : String("-"));
-    txt(STAT_LABEL_X, 116, "IN 24 H", F_MICRO);
+    txt(STAT_LABEL_X, 116, "IN 24H", F_MICRO);
     if (timeOK) { int f = seismic::feltCount24h();
       txt(STAT_LABEL_X, 130, f > 0 ? (String(f) + " felt nearby") : String("none felt"), F_BADGE); }
 
@@ -402,8 +403,8 @@ namespace {
     txt(STAT_LABEL_X, 180, mr, F_BADGE);
 
     display.drawLine(212, 192, 388, 192, GxEPD_BLACK);
-    display.drawCircle(219, 204, 3, GxEPD_BLACK); txt(230, 208, "shallow \xC2\xB7 <8km", F_MICRO);
-    display.fillCircle(219, 220, 3, GxEPD_BLACK); txt(230, 224, "deep \xC2\xB7 >=8km", F_MICRO);
+    display.drawCircle(219, 204, 3, GxEPD_BLACK); txt(230, 208, "Shallow \xC2\xB7 < 8km", F_MICRO);
+    display.fillCircle(219, 220, 3, GxEPD_BLACK); txt(230, 224, "Deep \xC2\xB7 > 8km", F_MICRO);
     if (seismic::recordMag() > 0) {
       char r[44]; snprintf(r, sizeof(r), "Largest: M%.1f \xC2\xB7 %s",
                            seismic::recordMag(), seismic::recordDate().c_str());
@@ -479,10 +480,11 @@ namespace {
     if (s.valid) {
       String rise = astro::hm12(s.riseMin, cfg.clock24h), set = astro::hm12(s.setMin, cfg.clock24h);
       int tw = wOf(rise, F_BADGE); { int w2 = wOf(set, F_BADGE); if (w2 > tw) tw = w2; }
-      int gW = 14 + 4 + 6 + 2 + tw;                       // glyph gap arrow gap time
+      const int gap = 9;                                  // space between the sun glyph and the times
+      int gW = 14 + gap + 6 + 2 + tw;                     // glyph gap arrow gap time
       int gx = cx2 - gW / 2;
       sunGlyph(gx + 7, 268);
-      int ax = gx + 14 + 4 + 3, txx = gx + 14 + 4 + 6 + 2;
+      int ax = gx + 14 + gap + 3, txx = gx + 14 + gap + 6 + 2;
       arrow(ax, 259, true);  txt(txx, 262, rise, F_BADGE);
       arrow(ax, 276, false); txt(txx, 279, set, F_BADGE);
       int dl = s.setMin - s.riseMin; if (dl < 0) dl += 1440;
