@@ -4,17 +4,33 @@
 namespace astro {
 
 Moon moon(time_t utc) {
-  // Synodic month from a known new moon: 2000-01-06 18:14 UTC = 947182440.
+  // Illuminated fraction + phase via Meeus, "Astronomical Algorithms" ch. 48 — it
+  // accounts for the Sun/Moon orbital anomalies (the elliptical orbit makes the cycle
+  // run fast/slow). A plain mean-synodic cosine was off by up to ~7-8 percentage points
+  // near the crescents. Still pure on-device math — no almanac, no network.
   const double SYNODIC = 29.530588853;
-  const double ref     = 947182440.0;
-  double days  = (double(utc) - ref) / 86400.0;
-  double phase = days / SYNODIC;
-  phase -= floor(phase);                 // 0..1 (0 = new, 0.5 = full)
+  const double D2R = M_PI / 180.0;
+  double JD = double(utc) / 86400.0 + 2440587.5;                      // Unix epoch -> Julian Day
+  double T  = (JD - 2451545.0) / 36525.0;                             // Julian centuries since J2000
+  double D  = 297.8501921 + 445267.1114034 * T - 0.0018819 * T * T;   // Moon mean elongation
+  double Ms = 357.5291092 + 35999.0502909  * T;                       // Sun  mean anomaly
+  double Mp = 134.9633964 + 477198.8675055 * T + 0.0087414 * T * T;   // Moon mean anomaly
+  double Dm = fmod(D, 360.0); if (Dm < 0) Dm += 360.0;
+  double Dr = Dm * D2R, Msr = fmod(Ms, 360.0) * D2R, Mpr = fmod(Mp, 360.0) * D2R;
+  double i  = 180.0 - Dm
+              - 6.289 * sin(Mpr) + 2.100 * sin(Msr)
+              - 1.274 * sin(2 * Dr - Mpr) - 0.658 * sin(2 * Dr)
+              - 0.214 * sin(2 * Mpr) - 0.110 * sin(Dr);               // phase angle (deg)
 
   Moon m;
-  m.illum   = (1.0 - cos(2.0 * M_PI * phase)) / 2.0;
-  m.ageDays = (int)floor(phase * SYNODIC + 0.5);
-  m.waxing  = phase < 0.5;
+  m.illum  = (1.0 + cos(i * D2R)) / 2.0;                              // 0 = new, 1 = full
+  m.waxing = (Dm < 180.0);                                           // Moon east of Sun, growing
+
+  // Age + phase name from the elongation implied by the illuminated fraction.
+  double psi_p = acos(fmax(-1.0, fmin(1.0, 1.0 - 2.0 * m.illum))) / D2R;   // 0..180
+  double psi   = m.waxing ? psi_p : 360.0 - psi_p;                   // 0 new .. 180 full .. 360
+  double phase = psi / 360.0;                                        // 0..1 through the cycle
+  m.ageDays = ((int)floor(phase * SYNODIC + 0.5)) % 30;
 
   if      (phase < 0.03 || phase > 0.97) m.name = "New moon";
   else if (phase < 0.22)                 m.name = "Waxing crescent";

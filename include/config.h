@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.8.9"   // moon glyph inverted to almanac convention (lit=paper, shadow=ink)
+#define FIRMWARE_VERSION "0.8.10"  // moon illumination/age upgraded to Meeus (accurate, was mean-synodic)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

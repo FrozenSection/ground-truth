@@ -4,6 +4,13 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.10] — 2026-06-20 · Accurate moon illumination + age
+- **Moon illumination/age upgraded to Meeus** (Astronomical Algorithms ch. 48). The old
+  mean-synodic model assumed a uniform cycle rate and ignored the Sun/Moon orbital
+  anomalies, so it read up to ~7–8 points low near the crescents (e.g. 24% when the true
+  value was ~31%). Now within ~1–2% of any almanac — illuminated fraction, age, and phase
+  name all derive from the true phase angle. Still pure on-device math; no network.
+
 ## [0.8.9] — 2026-06-20 · Moon glyph: almanac convention (inverted)
 - **Moon now inks the shadow, not the light.** Previously the *illuminated* fraction was
   filled black — backwards from reality and from every almanac/weather glyph (it made a
