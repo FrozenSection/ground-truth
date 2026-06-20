@@ -263,8 +263,9 @@ namespace {
     int h = seismic::headlineIndex();
     if (h < 0) {                                   // Quiet
       txt(9, 64, "Quiet", F_MAG);
-      txt(150, 44, "No events in range", F_PLACE);
-      if (timeOK) txt(150, 66, timekeeper::dateStr(), F_BODY);
+      int qx = 9 + wOf("Quiet", F_MAG) + 22;       // anchor the caption past "Quiet" + a gap
+      txt(qx, 44, "No events in range", F_PLACE);
+      if (timeOK) txt(qx, 66, timekeeper::dateStr(), F_BODY);
       display.drawLine(0, 90, 400, 90, GxEPD_BLACK);
       return;
     }

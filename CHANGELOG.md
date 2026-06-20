@@ -4,6 +4,11 @@ All notable changes to Ground Truth firmware. SemVer; PATCH may bump per flash
 during multi-flash debug sessions so the on-screen version confirms the binary
 took.
 
+## [0.8.5] — 2026-06-19 · Display: Quiet caption spacing
+- In the **Quiet** state, "No events in range" and the date were crammed against the big
+  54px "Quiet" (both anchored at x150). They're now anchored to the measured right edge of
+  "Quiet" plus a 22px gap, so the spacing holds regardless of font metrics.
+
 ## [0.8.4] — 2026-06-14 · Web mirror shows both pages
 - **The mirror can now show Page 2 (Timeline), not just the Map.** Added a **Map / Timeline
   toggle** above the panel; the SVG renders whichever page you pick. It **defaults to the
