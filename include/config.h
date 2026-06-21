@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.13.0"  // configurable USGS endpoint, prefer-Ethernet route, scan cleanup, intl time zones
+#define FIRMWARE_VERSION "0.13.1"  // web diagnostics: conditional WiFi signal strength (dBm + Good/Fair/Weak)
 
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"

@@ -304,8 +304,10 @@ function applyGeo(g){f("lat").value=g.lat;f("lon").value=g.lon;
 function load(){fetch("/api/state").then(r=>r.json()).then(d=>{
  const up=Math.floor(d.uptime/3600)+"h "+Math.floor(d.uptime%3600/60)+"m";
  const eth=d.eth||{};const ethTxt=eth.present?(eth.mac+(eth.up?" · up":" · down")):"—";
+ // WiFi signal only when actually associated (RSSI is meaningless on Ethernet / radio-off).
+ const sig=(d.rssi<0&&d.rssi>-100)?`<b>WiFi signal</b><span>${d.rssi} dBm · ${d.rssi>-60?"Excellent":d.rssi>-67?"Good":d.rssi>-75?"Fair":"Weak"}</span>`:"";
  f("diag").innerHTML=`<b>Firmware</b><span>v${d.fw}</span><b>Status</b><span>${d.online?"online":"offline"} · synced ${d.synced}</span>`+
-  `<b>IP</b><span>${d.ip}</span><b>WiFi MAC</b><span>${d.mac}</span>`+
+  `<b>IP</b><span>${d.ip}</span><b>WiFi MAC</b><span>${d.mac}</span>`+sig+
   `<b>Ethernet</b><span>${ethTxt}</span><b>Host</b><span>${d.host}.local</span><b>Uptime</b><span>${up}</span>`+
   `<b>Last reset</b><span>${d.resetReason||"?"}</span><b>Heap</b><span>${(d.heap/1024|0)} KB · min ${(d.heapMin/1024|0)} KB</span>`+
   `<b>Last fetch</b><span>${d.fetch?d.fetch.rel:"never"}</span><b>Largest</b><span>${d.stats.recMag>0?"M"+d.stats.recMag.toFixed(1)+" · "+d.stats.recDate:"—"}</span>`;
