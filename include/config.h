@@ -9,23 +9,34 @@
 // screen confirms the binary took. MINOR per gate/feature.
 #define FIRMWARE_VERSION "0.13.1"  // web diagnostics: conditional WiFi signal strength (dBm + Good/Fair/Weak)
 
+// ---- Per-build personalization (gitignored include/personalization.h) ----
+// Included FIRST so the #ifndef-guarded defaults below — RECIPIENT_SPLASH, OTA_PASSWORD,
+// AP_PASS — can be overridden per device. Copy personalization.example.h to
+// personalization.h; it is NEVER committed, keeping the recipient's name and this device's
+// unique passwords out of the public repo.
+#if __has_include("personalization.h")
+#include "personalization.h"
+#endif
+
 // ---- Identity ----
 #define PROJECT_NAME   "Ground Truth"
 #define AP_NAME        "GroundTruth-Setup"   // captive-portal SSID when unprovisioned
-#define AP_PASS        "groundtruth"          // WPA2 (>=8 chars) — printed on the card,
-                                              // so the setup AP isn't an open broadcast
+#ifndef AP_PASS                               // password for the device's OWN setup AP
+#define AP_PASS        "groundtruth"          // (GroundTruth-Setup) — WPA2, >=8 chars. Shown on
+                                              // the device's setup screen + the recovery card.
+#ifdef GIFT_BUILD
+#error "GIFT_BUILD with the default AP password — set a unique AP_PASS in include/personalization.h before shipping."
+#else
+#warning "Using the default AP password — set a unique AP_PASS in include/personalization.h for the gift build."
+#endif
+#endif
 #define AP_IP_STR      "192.168.4.1"
 #define MDNS_HOSTNAME  "groundtruth"          // -> http://groundtruth.local
 #define WEB_PORT       80
 
 // ---- Recipient personalization (boot splash) ----
-// The recipient's name is PERSONAL DATA and must never be committed to this
-// public repo. Copy include/personalization.example.h -> include/personalization.h
-// (gitignored) and define RECIPIENT_SPLASH there. Absent that file, the splash
-// falls back to a generic tagline.
-#if __has_include("personalization.h")
-#include "personalization.h"
-#endif
+// RECIPIENT_SPLASH is set in personalization.h (included at the top). The recipient's name is
+// PERSONAL DATA — never commit it to this public repo. Absent the file, a generic tagline shows.
 #ifndef RECIPIENT_SPLASH
 #define RECIPIENT_SPLASH "Live regional seismicity"
 #endif

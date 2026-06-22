@@ -33,10 +33,16 @@ mode always works, even on networks that block that.)
    screen** (tap to it) and in **Settings → Diagnostics**.
 3. Optional good-citizen step: in **Settings → Network**, set **WiFi radio → Off**.
 
-## Credentials & addresses
-- **Setup WiFi (Config mode):** `GroundTruth-Setup` / `groundtruth`
+## This device's passwords
+*(Two passwords are unique to this device. Fill them in below before gifting. These are NOT
+your home WiFi password — that one you type into the device at setup.)*
+- **Setup WiFi** — join `GroundTruth-Setup` in Config mode: `________________________`
+  *(also shown right on the device's setup screen, so it's never truly lost)*
+- **Firmware update** (`/update`): username `admin` · password `________________________`
 - **Web page:** `http://groundtruth.local` (or the IP on the Info screen)
-- **Firmware update:** Settings → *Open firmware update* — asks for the update username/password.
+
+*Forgot a password? The setup-WiFi one is on the device screen. For the firmware-update one,
+re-flashing over USB restores a known password — so you're never permanently locked out.*
 
 ## For troubleshooting (Settings → Diagnostics)
 Shows **last reset reason** (power-on / watchdog / etc.), **free memory**, **uptime**, both
