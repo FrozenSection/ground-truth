@@ -310,7 +310,7 @@ namespace {
     char dist[48];
     snprintf(dist, sizeof(dist), "%dkm %s of %s",
              (int)lround(q.distKm), seismic::bearingName(q.bearingDeg), home.c_str());
-    txt(150, y3, dist, F_BODY);
+    txt(150, y3, ellipsize(String(dist), F_BODY, 392 - 150), F_BODY);  // bound a long home name
     display.drawLine(0, 90, 400, 90, GxEPD_BLACK);
   }
 

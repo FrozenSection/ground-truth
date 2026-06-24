@@ -83,13 +83,13 @@ PAGES.forEach(p=>document.getElementById(PGID[p]).addEventListener("click",()=>s
 function pageDots(add){PAGES.forEach((p,i)=>{const dot=el("circle",{cx:368+i*12,cy:13,r:3.5,fill:p===curPage?"#000":"#fff",stroke:"#000"});dot.style.cursor="pointer";dot.addEventListener("click",()=>setPage(p));add(dot);});}
 
 // ---- shared hero (page dots reflect the page you're VIEWING and are clickable) ----
-function drawHero(add,d){const h=d.headline;
+function drawHero(add,d){const h=d.headline,clip=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
  pageDots(add);
  if(d.offline){const ox=346,oy=15;add(el("path",{d:`M ${ox-7} ${oy-3} q 7 -7 14 0 M ${ox-4} ${oy} q 4 -4 8 0`,fill:"none",stroke:"#000","stroke-width":1.1}));add(el("circle",{cx:ox,cy:oy+2,r:1.1,fill:"#000"}));add(el("line",{x1:ox-8,y1:oy-6,x2:ox+8,y2:oy+5,stroke:"#000","stroke-width":1.3}));}
  if(h){add(tx(9,66,h.mag,{"font-size":52,"font-weight":700,"letter-spacing":-2.5}));
-  add(tx(150,34,esc(h.place).replace(/ km/g,"km"),{"font-size":15,"font-weight":700}));
+  add(tx(150,34,esc(clip(h.place.replace(/ km/g,"km"),33)),{"font-size":15,"font-weight":700}));
   add(tx(150,54,`Depth ${h.depthKm}km${d.timeOK&&h.rel?" · "+h.rel:""}`,{"font-size":13}));
-  const home=(((d.loc&&d.loc.name)||"").split(",")[0].trim())||"home";
+  const home=clip((((d.loc&&d.loc.name)||"").split(",")[0].trim())||"home",22);
   add(tx(150,72,`${h.distDisp}${h.unit} ${h.bearing} of ${esc(home)}`,{"font-size":13}));}
  else add(tx(9,60,"Quiet",{"font-size":42,"font-weight":700}));
  add(el("line",{x1:0,y1:90,x2:400,y2:90,stroke:"#000"}));}
