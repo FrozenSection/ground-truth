@@ -41,7 +41,7 @@ namespace {
 <title>Ground Truth</title><style>
 :root{font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a}
 body{margin:0;background:#d7d7d5;padding:0 24px 24px}.wrap{max-width:680px;margin:0 auto}
-.hdr{position:sticky;top:0;background:#d7d7d5;padding:20px 0 10px;z-index:5}
+.hdr{padding:20px 0 10px}
 .top{display:flex;justify-content:space-between;align-items:baseline}
 h1{font-size:20px;margin:0}a{color:#1a5fb4;text-decoration:none;font-size:13px}
 .sub{color:#666;font-size:13px;margin:2px 0 0}
