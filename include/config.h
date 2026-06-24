@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.14.0"  // on-device owner's guide at /guide (linked from settings)
+#define FIRMWARE_VERSION "0.14.1"  // restyle /guide to match the printed design (design B)
 
 // ---- Per-build personalization (gitignored include/personalization.h) ----
 // Included FIRST so the #ifndef-guarded defaults below — RECIPIENT_SPLASH, OTA_PASSWORD,

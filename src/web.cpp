@@ -372,49 +372,65 @@ function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
   // is online. NO passwords (those live on the card); MACs + IP are filled live from /api/state.
   const char GUIDE_HTML[] PROGMEM = R"HTML(<!DOCTYPE html><html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ground Truth — Guide</title><style>
-:root{--c:#ae4f2b}
-body{font:16px/1.55 -apple-system,system-ui,Arial,sans-serif;max-width:680px;margin:0 auto;padding:1.1rem 1.1rem 3rem;color:#1f1c18}
-.top{display:flex;justify-content:space-between;align-items:baseline}
-h1{font-size:1.6rem;margin:0;font-family:Georgia,serif}
-.tag{color:#6b655b;font-style:italic;margin:.2rem 0 1.3rem}
-h2{font-size:.82rem;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid #e0dacd;padding-bottom:4px;margin:1.4rem 0 .5rem}
-h2 b{color:var(--c);margin-right:7px}
-ul{margin:.3rem 0;padding-left:1.2rem}li{margin:.25rem 0}
-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;background:#f5efe5;padding:0 4px;border-radius:3px}
-.dev{border:1.5px solid #1f1c18;border-radius:8px;padding:.7rem 1rem .8rem;background:#faf6ef;margin-top:1.5rem}
-.dev>div{margin:.2rem 0}a{color:var(--c)}
+<title>Ground Truth — Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;1,400;1,600&family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--c:#ae4f2b}*{box-sizing:border-box}
+body{font:15px/1.55 'Public Sans',-apple-system,system-ui,Arial,sans-serif;max-width:720px;margin:0 auto;padding:2rem 1.2rem 3rem;color:#1f1c18;background:#fff}
+.mast{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px}
+h1{font-family:'Spectral',Georgia,serif;font-weight:600;font-size:clamp(34px,7vw,46px);letter-spacing:-.5px;line-height:.95;margin:0}
+.tag{font-family:'Spectral',Georgia,serif;font-style:italic;font-size:15.5px;color:#6b655b;margin:7px 0 0}
+.mr{text-align:right;padding-bottom:3px}.badge{font-size:10.5px;font-weight:700;letter-spacing:1.5px;color:var(--c)}.mr a{font-size:12px}
+.wave{display:block;width:100%;height:22px;margin:16px 0 0}
+.s1{height:1px;background:#d8d1c2}.s2{height:1px;background:#ece6d9;margin:2px 0 22px}
+h2{display:flex;align-items:center;gap:9px;border-bottom:1px solid #e0dacd;padding-bottom:5px;margin:1.6rem 0 .55rem;font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.n{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border:1.5px solid var(--c);border-radius:50%;font-size:11px;font-weight:700;color:var(--c);flex:none}
+h2.gk{font-family:'Spectral',Georgia,serif;font-style:italic;font-weight:600;font-size:14px;color:var(--c);text-transform:none;letter-spacing:0}
+ul{margin:.3rem 0;padding-left:1.25rem}li{margin:.32rem 0}
+code{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:.86em;background:#f5efe5;padding:1px 4px;border-radius:3px}
+b{font-weight:700}a{color:var(--c)}
+.dev{border:1.5px solid #1f1c18;border-radius:8px;padding:.85rem 1.1rem 1rem;background:#faf6ef;margin-top:1.7rem}
+.dev .t{font-weight:700;letter-spacing:1px;text-transform:uppercase;font-size:12.5px;margin-bottom:.55rem}
+.dev>div{margin:.28rem 0}.dev .note{font-size:.86rem;color:#6b655b;margin-top:.6rem}
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11px;color:#8a847a;margin-top:1.6rem;border-top:1px solid #ece6d9;padding-top:10px}
+.foot span:last-child{font-family:'IBM Plex Mono',monospace}
 </style></head><body>
-<div class="top"><h1>Ground Truth</h1><a href="/settings">Settings ›</a></div>
-<p class="tag">Your seismic desk display — a live window into earthquakes around you.</p>
-<h2><b>1</b>Get it online</h2><ul>
+<div class="mast">
+  <div><h1>Ground Truth</h1><div class="tag">Your seismic desk display — a live window into earthquakes around you.</div></div>
+  <div class="mr"><div class="badge">OWNER&rsquo;S GUIDE</div><a href="/settings">Settings &rsaquo;</a></div>
+</div>
+<svg class="wave" viewBox="0 0 704 22" preserveAspectRatio="none"><path d="M0 11 L92 11 L98 9.5 L104 12.5 L112 11 L150 11 L156 10 L162 12 L170 11 L210 11 L214 9 L218 13 L222 8 L226 14 L230 9.5 L234 12.5 L238 11 L300 11 L305 6 L310 16 L315 3 L320 19 L325 4 L330 17 L335 6 L340 15 L345 8 L350 14 L355 9.5 L360 12.5 L366 11 L430 11 L436 9.5 L442 12.5 L450 11 L520 11 L525 10 L530 12 L536 11 L610 11 L616 9.5 L622 12 L628 11 L704 11" fill="none" stroke="#ae4f2b" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
+<div class="s1"></div><div class="s2"></div>
+<h2><span class="n">1</span>Get it online</h2><ul>
 <li><b>WiFi:</b> join <code>GroundTruth-Setup</code> from your phone (password on the card) and pick your network — or open <code>192.168.4.1</code>.</li>
 <li><b>Ethernet:</b> just plug in. On a campus/managed network, register the device's Ethernet MAC (below) first. If both links are up, it prefers wired.</li></ul>
-<h2><b>2</b>The button</h2><ul><li><b>Tap</b> &rarr; next view (Map &rarr; Timeline &rarr; Info)</li><li><b>Hold 3 s</b> &rarr; settings</li></ul>
-<h2><b>3</b>The screens</h2><ul>
+<h2><span class="n">2</span>The button</h2><ul><li><b>Tap</b> &rarr; next view (Map &rarr; Timeline &rarr; Info)</li><li><b>Hold 3 s</b> &rarr; settings</li></ul>
+<h2><span class="n">3</span>The screens</h2><ul>
 <li><b>Map</b> — recent quakes nearby, scaled by magnitude</li>
 <li><b>Timeline</b> — the last 7 days</li>
 <li><b>Info</b> — clock, IP, and MAC addresses</li>
 <li><b>The big number</b> is the most significant nearby quake (size + how widely it was felt) — last 24 h if active, otherwise the biggest of the past 7 days.</li>
 <li><b>"Quiet"</b> = nothing notable lately (not an error). A still screen is normal — e-paper only redraws on a change.</li></ul>
-<h2><b>4</b>Settings</h2><ul>
+<h2><span class="n">4</span>Settings</h2><ul>
 <li><b>At home:</b> <code>groundtruth.local</code> (or the IP on the Info screen).</li>
 <li><b>On a network that hides it:</b> hold the button &rarr; join <code>GroundTruth-Setup</code> &rarr; <code>192.168.4.1</code>.</li>
 <li>Location, radius, magnitude, time zone, WiFi. <b>Diagnostics</b> shows signal, uptime, memory, last reset.</li></ul>
-<h2><b>5</b>On a managed network (dorm, lab, campus)</h2>
+<h2><span class="n">5</span>On a managed network (dorm, lab, campus)</h2>
 <p>Use the Ethernet jack and register the Ethernet MAC (below) with housing / IT. Optional: flip WiFi off (Settings &rarr; Network) so it isn't broadcasting on a wired network.</p>
-<h2><b>6</b>If something's off</h2><ul>
+<h2><span class="n">6</span>If something's off</h2><ul>
 <li><b>Frozen or blank:</b> power-cycle it (it also self-recovers within ~30 s).</li>
 <li><b>"Offline" mark:</b> check the link, or hold the button to reconnect.</li></ul>
-<h2>Good to know</h2><ul>
+<h2 class="gk">Good to know</h2><ul>
 <li>Open-source — <code>github.com/FrozenSection/ground-truth</code></li>
 <li>Firmware updates at <a href="/update">/update</a> (or USB).</li>
 <li>If USGS moves its feed, the data-source URL is editable in Settings &rarr; Advanced.</li></ul>
-<div class="dev"><div style="font-weight:600;letter-spacing:.5px;text-transform:uppercase;font-size:.8rem">This device</div>
-<div>Ethernet MAC: <code id="emac">…</code> <span style="color:#8a847a">— register on a managed network</span></div>
-<div>WiFi MAC: <code id="wmac">…</code></div>
-<div>Address: <code id="gip">…</code> · <code>groundtruth.local</code></div>
-<div style="font-size:.85rem;color:#6b655b;margin-top:.5rem">Your passwords are on the printed card that came in the box.</div></div>
+<div class="dev"><div class="t">This device</div>
+<div><b>Ethernet MAC:</b> <code id="emac" style="color:var(--c);font-weight:600">…</code> <span style="color:#8a847a">— register on a managed network</span></div>
+<div><b>WiFi MAC:</b> <code id="wmac">…</code></div>
+<div><b>Address:</b> <code id="gip">…</code> &middot; <code>groundtruth.local</code></div>
+<div class="note">Your passwords are on the printed card that came in the box.</div></div>
+<div class="foot"><span>Earthquake data from the U.S. Geological Survey</span><span>groundtruth.local</span></div>
 <script>fetch('/api/state').then(r=>r.json()).then(d=>{var e=d.eth||{};
 emac.textContent=e.mac||'—';wmac.textContent=d.mac||'—';gip.textContent=d.ip||'—';});</script>
 </body></html>)HTML";
