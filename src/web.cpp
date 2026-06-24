@@ -239,7 +239,7 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
   <input type="hidden" id="manual" value="1">
   <details style="margin-top:.7rem"><summary style="font-size:13px;color:#666;cursor:pointer">Advanced — earthquake data source</summary>
     <label>USGS data URL</label>
-    <input id="fdsn" type="text" placeholder="https://earthquake.usgs.gov/fdsnws/event/1/query">
+    <input id="fdsn" type="text" placeholder="https://earthquake.usgs.gov/fdsnws/event/1/query" autocapitalize="none" autocorrect="off" spellcheck="false">
     <div style="font-size:12px;color:#666;margin:4px 0 0">Leave this alone. Only change it if quake data stops updating for good and USGS has moved the endpoint.</div>
   </details>
   <button type="submit">Save</button><span class="msg" id="msg"></span>
@@ -256,9 +256,9 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
   <label>Join a network</label>
   <select id="wssid"><option>scanning…</option></select>
   <label>…or type the name</label>
-  <input id="wmanual" placeholder="(leave blank to use the list)">
+  <input id="wmanual" placeholder="(leave blank to use the list)" autocapitalize="none" autocorrect="off" spellcheck="false">
   <label>Password</label>
-  <input id="wpass" type="password" placeholder="network password">
+  <input id="wpass" type="password" placeholder="network password" autocapitalize="none" autocorrect="off" spellcheck="false">
   <button onclick="saveWifi()">Save &amp; connect</button>
   <button class="warn" onclick="act('/api/wifi/reset','Forget the saved WiFi network and reopen the setup portal?')">Forget network</button>
   <p class="msg" id="wmsg"></p>

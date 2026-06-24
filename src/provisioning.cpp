@@ -34,9 +34,9 @@ small{opacity:.6}</style></head><body>
 <label for="ssid">Network</label>
 <select id="ssid"><option>scanning&hellip;</option></select>
 <label for="manual">&hellip;or type it manually</label>
-<input id="manual" placeholder="(leave blank to use the list above)">
+<input id="manual" placeholder="(leave blank to use the list above)" autocapitalize="none" autocorrect="off" spellcheck="false">
 <label for="pass">Password</label>
-<input id="pass" type="password" placeholder="WiFi password">
+<input id="pass" type="password" placeholder="WiFi password" autocapitalize="none" autocorrect="off" spellcheck="false">
 <button onclick="save()">Save &amp; connect</button>
 <p><small>Device MAC <span id="mac">&hellip;</span> &mdash; register this with a
 campus/school network if it asks.</small></p>

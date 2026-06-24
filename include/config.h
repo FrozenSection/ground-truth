@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.13.1"  // web diagnostics: conditional WiFi signal strength (dBm + Good/Fair/Weak)
+#define FIRMWARE_VERSION "0.13.2"  // iOS: disable auto-capitalize/correct on SSID + password + URL fields
 
 // ---- Per-build personalization (gitignored include/personalization.h) ----
 // Included FIRST so the #ifndef-guarded defaults below — RECIPIENT_SPLASH, OTA_PASSWORD,
