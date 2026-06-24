@@ -424,13 +424,23 @@ namespace {
 
   // ---- Page 2 content: 7-day lollipop strip chart ---------------------------
   void drawTimelinePanel(bool timeOK) {
-    const int x0 = 22, x1 = 388, baseY = 224, topY = 124;
-    const int gy[3] = {205, 167, 129}; const char* gl[3] = {"M2", "M3", "M4"};
-    for (int i = 0; i < 3; i++) { dashedHLine(x0, gy[i], x1); txt(x0 - 4, gy[i] + 3, gl[i], F_MICRO, 2); }
+    const int x0 = 22, x1 = 388, baseY = 224, topY = 124, M2Y = 205, topGridY = 129;
+    // Dynamic magnitude ceiling: M2 stays anchored at the bottom; the top floats to the next
+    // whole magnitude above the week's max (floored at M4) so a big quake TOWERS instead of
+    // clamping flat. Quiet weeks (max < M4) look exactly as before (M2–M4 at 38 px/mag).
+    float lo, hi; seismic::magRange(lo, hi);
+    int topMag = 4;
+    if (seismic::count7d() > 0) { int t = (int)ceilf(hi); if (t > topMag) topMag = t; }
+    if (topMag > 8) topMag = 8;
+    const float span = (float)(M2Y - topGridY) / (float)(topMag - 2);   // px per magnitude
+    for (int m = 2; m <= topMag; m++) {
+      int gyy = M2Y - (int)lround(span * (m - 2));
+      dashedHLine(x0, gyy, x1);
+      char gl[5]; snprintf(gl, sizeof(gl), "M%d", m); txt(x0 - 4, gyy + 3, gl, F_MICRO, 2);
+    }
     display.drawLine(x0, baseY, x1, baseY, GxEPD_BLACK);
 
     // three stats spread left / center / right so they don't run together
-    float lo, hi; seismic::magRange(lo, hi);
     statSeg(x0,  111, "TODAY", timeOK ? String(seismic::count24h()) : String("-"), 0);
     statSeg(204, 111, "7-DAY MAX", seismic::count7d() > 0 ? (String("M") + String(hi, 1)) : String("-"), 1);
     statSeg(x1,  111, "LARGEST",   seismic::recordMag() > 0 ? (String("M") + String(seismic::recordMag(), 1)) : String("-"), 2);
@@ -445,7 +455,7 @@ namespace {
       txt(wx, baseY + 14, s, F_MICRO, 1);
     }
     auto magY = [&](float m) {
-      int y = 205 - (int)lround(38.0f * (m - 2.0f));
+      int y = M2Y - (int)lround(span * (m - 2.0f));
       if (y > baseY - 2) y = baseY - 2; if (y < topY) y = topY; return y;
     };
     const auto& evs = seismic::events(); int h = seismic::headlineIndex();

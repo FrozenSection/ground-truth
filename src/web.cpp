@@ -115,16 +115,20 @@ function drawMap(add,d){
 
 // ---- Page 2: Timeline (7-day lollipop strip; mirrors src/display.cpp drawTimelinePanel) ----
 function drawTimeline(add,d){
- const x0=22,x1=388,baseY=224,topY=124;
- [[205,"M2"],[167,"M3"],[129,"M4"]].forEach(([gy,gl])=>{add(el("line",{x1:x0,y1:gy,x2:x1,y2:gy,stroke:"#000","stroke-dasharray":"1 3"}));add(tx(x0-4,gy+3,gl,{"font-size":9,"text-anchor":"end"}));});
+ const x0=22,x1=388,baseY=224,topY=124,M2Y=205,topGridY=129,t=d.stats;
+ // Dynamic magnitude ceiling (mirrors src/display.cpp): M2 anchored at the bottom; the top floats
+ // to the next whole magnitude above the week's max (floored at M4) so a big quake towers, not clamps.
+ let topMag=4;if(t.c7>0){const tm=Math.ceil(t.magHi);if(tm>topMag)topMag=tm;}if(topMag>8)topMag=8;
+ const span=(M2Y-topGridY)/(topMag-2);
+ for(let m=2;m<=topMag;m++){const gy=Math.round(M2Y-span*(m-2));add(el("line",{x1:x0,y1:gy,x2:x1,y2:gy,stroke:"#000","stroke-dasharray":"1 3"}));add(tx(x0-4,gy+3,"M"+m,{"font-size":9,"text-anchor":"end"}));}
  add(el("line",{x1:x0,y1:baseY,x2:x1,y2:baseY,stroke:"#000"}));
- const t=d.stats,mx=t.c7>0?("M"+t.magHi.toFixed(1)):"–",rec=t.recMag>0?("M"+t.recMag.toFixed(1)):"–";
+ const mx=t.c7>0?("M"+t.magHi.toFixed(1)):"–",rec=t.recMag>0?("M"+t.recMag.toFixed(1)):"–";
  const seg=(ax,lab,val,anc)=>{const e=el("text",{x:ax,y:111,fill:"#000","font-family":"Helvetica Neue,Arial","text-anchor":anc,"font-size":9,"font-weight":700});const a=document.createElementNS(NS,"tspan");a.textContent=lab+" ";const b=document.createElementNS(NS,"tspan");b.textContent=val;b.setAttribute("font-size","11");e.appendChild(a);e.appendChild(b);add(e);};
  seg(x0,"TODAY",d.timeOK?t.c24:"–","start");seg(204,"7-DAY MAX",mx,"middle");seg(x1,"LARGEST",rec,"end");
  if(!d.timeOK){add(tx(204,178,"Waiting for time sync…",{"font-size":13,"text-anchor":"middle",fill:"#555"}));return;}
  const now=d.now,start=now-7*86400;
  for(let dd=0;dd<7;dd++){const wx=x0+((dd+0.5)/7)*(x1-x0),c="SMTWTFS"[new Date((start+dd*86400)*1000).getDay()];add(tx(wx,baseY+14,c,{"font-size":9,"text-anchor":"middle"}));}
- const magY=m=>{let y=205-38*(m-2);if(y>baseY-2)y=baseY-2;if(y<topY)y=topY;return y;};
+ const magY=m=>{let y=M2Y-span*(m-2);if(y>baseY-2)y=baseY-2;if(y<topY)y=topY;return y;};
  (d.events||[]).forEach(q=>{if(q.t<start)return;const ex=x0+((q.t-start)/(7*86400))*(x1-x0),ey=magY(q.mag),rad=q.mag>=4?4:q.mag>=3?3:2;
   add(el("line",{x1:ex,y1:baseY,x2:ex,y2:ey,stroke:"#000"}));add(el("circle",{cx:ex,cy:ey,r:rad,fill:"#000"}));
   if(q.head){add(el("circle",{cx:ex,cy:ey,r:rad+2,fill:"none",stroke:"#000"}));const lx=Math.max(40,Math.min(372,ex));add(tx(lx,Math.max(118,ey-rad-6),"M"+q.mag.toFixed(1),{"font-size":9,"text-anchor":"middle","font-weight":700}));}});}
