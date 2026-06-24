@@ -18,6 +18,11 @@ secrets.h
 # Recipient personalization (boot-splash name) — keep PII out of the public repo.
 include/personalization.h
 
+# Owner's-guide PRINT copies — filled with a device's passwords + MAC addresses, so they stay
+# local. The blank source template (docs/OWNERS-GUIDE.md) stays committed.
+docs/OWNERS-GUIDE.html
+docs/OWNERS-GUIDE*.pdf
+
 # OS
 .DS_Store
 
