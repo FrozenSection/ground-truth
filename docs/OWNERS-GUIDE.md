@@ -1,8 +1,6 @@
 # Ground Truth — Owner's Guide
 
-*Your seismic desk display — a live window into the earthquakes around you.*
-
-<!-- Optional: add a personal line / dedication from you here. -->
+*Your seismic desk display — a live window into earthquakes around you.*
 
 
 ## 1. Get it online
@@ -16,7 +14,7 @@
 
 ## 2. The button
 
-- **Tap** → next screen (Map → Timeline → Info)
+- **Tap** → next view (Map → Timeline → Info)
 - **Hold 3 s** → settings
 
 
@@ -48,10 +46,10 @@ step: flip **WiFi off** (Settings → Network) so it isn't broadcasting on a wir
 ## 6. If something's off
 
 - **Frozen or blank:** power-cycle it (it also self-recovers within ~30 s via a watchdog).
-- **"Offline" mark:** check the link, or hold the button to reconnect.
+- **"Offline" mark:** check the link, or hold the button to enter settings and connect to WiFi.
 
 
-## Good to know (for the curious)
+## Good to know
 
 - It's **open-source** — `github.com/FrozenSection/ground-truth`
 - **Firmware updates** over the network at `/update` (or USB).
