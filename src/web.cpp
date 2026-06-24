@@ -199,7 +199,7 @@ button{margin-top:14px;font:inherit;padding:.55rem 1rem;border:0;border-radius:7
 button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 .msg{font-size:13px;color:#1a7f37;margin-top:10px;margin-left:14px}
 </style></head><body><div class="wrap">
-<div class="top"><h1>Settings</h1><a href="/">‹ Display</a></div>
+<div class="top"><h1>Settings</h1><span><a href="/guide">Guide</a> &nbsp;·&nbsp; <a href="/">‹ Display</a></span></div>
 
 <h2>Location</h2>
 <div class="card"><form id="cfg">
@@ -368,6 +368,57 @@ function saveWifi(){var ssid=f("wmanual").value.trim()||f("wssid").value;
  fetch("/api/wifi/save",{method:"POST",body:new URLSearchParams({ssid:ssid,pass:f("wpass").value})});}
 </script></body></html>)HTML";
 
+  // On-device owner's guide — the printed card's content, reachable at /guide once the device
+  // is online. NO passwords (those live on the card); MACs + IP are filled live from /api/state.
+  const char GUIDE_HTML[] PROGMEM = R"HTML(<!DOCTYPE html><html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ground Truth — Guide</title><style>
+:root{--c:#ae4f2b}
+body{font:16px/1.55 -apple-system,system-ui,Arial,sans-serif;max-width:680px;margin:0 auto;padding:1.1rem 1.1rem 3rem;color:#1f1c18}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+h1{font-size:1.6rem;margin:0;font-family:Georgia,serif}
+.tag{color:#6b655b;font-style:italic;margin:.2rem 0 1.3rem}
+h2{font-size:.82rem;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid #e0dacd;padding-bottom:4px;margin:1.4rem 0 .5rem}
+h2 b{color:var(--c);margin-right:7px}
+ul{margin:.3rem 0;padding-left:1.2rem}li{margin:.25rem 0}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;background:#f5efe5;padding:0 4px;border-radius:3px}
+.dev{border:1.5px solid #1f1c18;border-radius:8px;padding:.7rem 1rem .8rem;background:#faf6ef;margin-top:1.5rem}
+.dev>div{margin:.2rem 0}a{color:var(--c)}
+</style></head><body>
+<div class="top"><h1>Ground Truth</h1><a href="/settings">Settings ›</a></div>
+<p class="tag">Your seismic desk display — a live window into earthquakes around you.</p>
+<h2><b>1</b>Get it online</h2><ul>
+<li><b>WiFi:</b> join <code>GroundTruth-Setup</code> from your phone (password on the card) and pick your network — or open <code>192.168.4.1</code>.</li>
+<li><b>Ethernet:</b> just plug in. On a campus/managed network, register the device's Ethernet MAC (below) first. If both links are up, it prefers wired.</li></ul>
+<h2><b>2</b>The button</h2><ul><li><b>Tap</b> &rarr; next view (Map &rarr; Timeline &rarr; Info)</li><li><b>Hold 3 s</b> &rarr; settings</li></ul>
+<h2><b>3</b>The screens</h2><ul>
+<li><b>Map</b> — recent quakes nearby, scaled by magnitude</li>
+<li><b>Timeline</b> — the last 7 days</li>
+<li><b>Info</b> — clock, IP, and MAC addresses</li>
+<li><b>The big number</b> is the most significant nearby quake (size + how widely it was felt) — last 24 h if active, otherwise the biggest of the past 7 days.</li>
+<li><b>"Quiet"</b> = nothing notable lately (not an error). A still screen is normal — e-paper only redraws on a change.</li></ul>
+<h2><b>4</b>Settings</h2><ul>
+<li><b>At home:</b> <code>groundtruth.local</code> (or the IP on the Info screen).</li>
+<li><b>On a network that hides it:</b> hold the button &rarr; join <code>GroundTruth-Setup</code> &rarr; <code>192.168.4.1</code>.</li>
+<li>Location, radius, magnitude, time zone, WiFi. <b>Diagnostics</b> shows signal, uptime, memory, last reset.</li></ul>
+<h2><b>5</b>On a managed network (dorm, lab, campus)</h2>
+<p>Use the Ethernet jack and register the Ethernet MAC (below) with housing / IT. Optional: flip WiFi off (Settings &rarr; Network) so it isn't broadcasting on a wired network.</p>
+<h2><b>6</b>If something's off</h2><ul>
+<li><b>Frozen or blank:</b> power-cycle it (it also self-recovers within ~30 s).</li>
+<li><b>"Offline" mark:</b> check the link, or hold the button to reconnect.</li></ul>
+<h2>Good to know</h2><ul>
+<li>Open-source — <code>github.com/FrozenSection/ground-truth</code></li>
+<li>Firmware updates at <a href="/update">/update</a> (or USB).</li>
+<li>If USGS moves its feed, the data-source URL is editable in Settings &rarr; Advanced.</li></ul>
+<div class="dev"><div style="font-weight:600;letter-spacing:.5px;text-transform:uppercase;font-size:.8rem">This device</div>
+<div>Ethernet MAC: <code id="emac">…</code> <span style="color:#8a847a">— register on a managed network</span></div>
+<div>WiFi MAC: <code id="wmac">…</code></div>
+<div>Address: <code id="gip">…</code> · <code>groundtruth.local</code></div>
+<div style="font-size:.85rem;color:#6b655b;margin-top:.5rem">Your passwords are on the printed card that came in the box.</div></div>
+<script>fetch('/api/state').then(r=>r.json()).then(d=>{var e=d.eth||{};
+emac.textContent=e.mac||'—';wmac.textContent=d.mac||'—';gip.textContent=d.ip||'—';});</script>
+</body></html>)HTML";
+
   void buildState(JsonDocument& doc) {
     std::lock_guard<std::mutex> lk(g_stateMutex);   // seismic state is mutated in the main loop
     const auto& c = settings::get();
@@ -511,6 +562,7 @@ void begin() {
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* r) { r->send(200, "text/html", PAGE_HTML); });
   server.on("/settings", HTTP_GET, [](AsyncWebServerRequest* r) { r->send(200, "text/html", SETTINGS_HTML); });
+  server.on("/guide", HTTP_GET, [](AsyncWebServerRequest* r) { r->send(200, "text/html", GUIDE_HTML); });
   server.on("/api/state", HTTP_GET, [](AsyncWebServerRequest* r) {
     JsonDocument doc; buildState(doc);
     AsyncResponseStream* res = r->beginResponseStream("application/json");
