@@ -162,8 +162,14 @@ bool fetch() {
 
   WiFiClientSecure client;
   client.setInsecure();                 // v1 — display-only data; bounded+validated below
+  client.setHandshakeTimeout(10);       // SECONDS — cap a stalled TLS handshake. The default is
+                                        // 120 s (4x the watchdog): a network blip mid-handshake
+                                        // would block this loop task >30 s and trip a "task
+                                        // watchdog (hang)" reboot. Bounding it keeps a bad fetch
+                                        // a fast failure (-> backoff) instead of a hang.
   HTTPClient http;
-  http.setTimeout(15000);
+  http.setConnectTimeout(10000);        // ms — cap a stalled TCP connect (separate from read TO)
+  http.setTimeout(15000);               // ms — stream-read timeout
   http.setUserAgent("GroundTruth/" FIRMWARE_VERSION);
   if (!http.begin(client, url)) { Serial.println("[usgs] begin failed"); return false; }
   const char* hdrKeys[] = { "Date" };

@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.14.4"  // dashboard: header no longer sticky (scrolls with the page)
+#define FIRMWARE_VERSION "0.14.5"  // harden fetch: bound TLS handshake/connect (was 120s default > WDT); WDT 30->45s
 
 // ---- Per-build personalization (gitignored include/personalization.h) ----
 // Included FIRST so the #ifndef-guarded defaults below — RECIPIENT_SPLASH, OTA_PASSWORD,
@@ -104,9 +104,11 @@
 #define CONFIG_AP_TIMEOUT_MS     (10UL * 60 * 1000)
 
 // ---- Health / hardening (Gate 6) ----
-// Task-watchdog timeout: must clear our longest blocking loop call (the ~15-17 s USGS
-// fetch) with margin, while still rebooting a genuine hang promptly.
-#define WDT_TIMEOUT_MS           30000UL
+// Task-watchdog timeout: must clear our longest blocking loop call (the USGS fetch) with margin.
+// The fetch is now hard-bounded in seismic.cpp (handshake 10 s + connect 10 s + read 15 s ≈ 35 s
+// absolute worst case) so 45 s clears it cleanly while still rebooting a genuine hang promptly.
+// (Was 30 s — too tight: an UNBOUNDED TLS handshake could hang ~120 s and trip a false watchdog.)
+#define WDT_TIMEOUT_MS           45000UL
 #define HEALTH_LOG_EVERY_MS      (5UL * 60 * 1000)   // periodic heap/uptime line for the soak log
 
 // ---- Time ----
