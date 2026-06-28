@@ -44,6 +44,10 @@ void splash() {
   frame(PROJECT_NAME, RECIPIENT_SPLASH, "Firmware v" FIRMWARE_VERSION);
 }
 
+void giftCard() {
+  frame(PROJECT_NAME, RECIPIENT_SPLASH, RECIPIENT_SPLASH2, "Plug in to begin");
+}
+
 void connectScreen(const String& apName, const String& apPass,
                    const String& wifiMac, const String& ethMac, bool error) {
   frame(error ? "Couldn't join WiFi" : "Connect Ground Truth",
@@ -613,6 +617,18 @@ void splash() {
       txt(200, 156, RECIPIENT_SPLASH, F_BODY, 1);
       txt(200, 184, "v" FIRMWARE_VERSION, F_MICRO, 1);
     }
+  } while (display.nextPage());
+}
+
+void giftCard() {
+  beginFull(); display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    txt(200, 112, PROJECT_NAME, F_TIME, 1);
+    if (RECIPIENT_SPLASH2[0]) { txt(200, 152, RECIPIENT_SPLASH, F_BODY, 1); txt(200, 174, RECIPIENT_SPLASH2, F_BODY, 1); }
+    else                      { txt(200, 162, RECIPIENT_SPLASH, F_BODY, 1); }
+    display.drawLine(170, 200, 230, 200, GxEPD_BLACK);     // short rule sets off the instruction
+    txt(200, 224, "Plug in to begin", F_BODY, 1);
   } while (display.nextPage());
 }
 

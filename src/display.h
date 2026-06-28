@@ -16,6 +16,11 @@ namespace epd {
   // ---- System screens (full refresh) ----
   void splash();   // boot: project name + recipient line + version
 
+  // Gift "pose": a static unboxing card (project name + recipient line(s) + "Plug in to
+  // begin"), drawn once when the button is HELD at power-on; the device then parks on it.
+  // e-paper retains the frame with no power, so it's the image waiting in the gift box.
+  void giftCard();
+
   // Unified Connect/Setup screen (DISPLAY-SPEC §7/§10.9): WiFi path (join AP + QR)
   // and Ethernet path, with BOTH MACs for managed-network registration. `ethMac`
   // is the W5500 address once Gate 1b lands; pass "" until then. `error` flips the

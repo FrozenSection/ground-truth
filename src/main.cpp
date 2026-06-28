@@ -93,6 +93,13 @@ void setup() {
   settings::begin();
   seismic::begin();
   epd::begin();
+  // Gift pose: button HELD at power-on -> draw the unboxing card and park on it. e-paper keeps
+  // the frame with no power, so it's what waits in the box. Checked before any network/watchdog
+  // code; a normal plug-in (button not held) boots as usual.
+  if (digitalRead(BUTTON_PIN) == LOW) {
+    delay(50);
+    if (digitalRead(BUTTON_PIN) == LOW) { epd::giftCard(); while (true) delay(1000); }
+  }
   epd::splash();
   neteth::begin();          // W5500 on the shared SPI bus (link/DHCP come async)
   bool wifiOn = settings::get().wifiEnabled;
