@@ -13,7 +13,7 @@
 // PERSONAL DATA — keep it only here, never committed). Use a plain "-" hyphen, NOT an em-dash:
 // the e-paper font is ASCII-only ("·" is fine). Leave RECIPIENT_SPLASH2 unset for one line.
 //   #define RECIPIENT_SPLASH  "For Firstname"
-//   #define RECIPIENT_SPLASH2 "Stay grounded - Uncle Scott"
+//   #define RECIPIENT_SPLASH2 "Stay grounded - <your name>"
 
 // Firmware-update (OTA) password — protects /update, the only firmware-flash path.
 // Pick a unique value per device and write it on the recovery card.
