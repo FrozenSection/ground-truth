@@ -604,9 +604,15 @@ void splash() {
   beginFull(); display.firstPage();
   do {
     display.fillScreen(GxEPD_WHITE);
-    txt(200, 124, PROJECT_NAME, F_TIME, 1);
-    txt(200, 156, RECIPIENT_SPLASH, F_BODY, 1);
-    txt(200, 184, "v" FIRMWARE_VERSION, F_MICRO, 1);
+    txt(200, 122, PROJECT_NAME, F_TIME, 1);
+    if (RECIPIENT_SPLASH2[0]) {                          // gift build: dedication + tagline lines
+      txt(200, 150, RECIPIENT_SPLASH,  F_BODY, 1);
+      txt(200, 172, RECIPIENT_SPLASH2, F_BODY, 1);
+      txt(200, 198, "v" FIRMWARE_VERSION, F_MICRO, 1);
+    } else {                                             // default: single personal line
+      txt(200, 156, RECIPIENT_SPLASH, F_BODY, 1);
+      txt(200, 184, "v" FIRMWARE_VERSION, F_MICRO, 1);
+    }
   } while (display.nextPage());
 }
 

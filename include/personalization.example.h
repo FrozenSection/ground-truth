@@ -9,8 +9,11 @@
 // For a gift build, compile with  -DGIFT_BUILD  — it turns the "default password" warnings
 // into hard ERRORS, so the firmware won't build until OTA_PASSWORD and AP_PASS are set.
 
-// Boot-splash line (recipient's name is PERSONAL DATA — keep it only here, never committed):
-//   #define RECIPIENT_SPLASH "Firstname · UC Davis Geology"
+// Boot splash — up to TWO centered lines under the "Ground Truth" title (recipient's name is
+// PERSONAL DATA — keep it only here, never committed). Use a plain "-" hyphen, NOT an em-dash:
+// the e-paper font is ASCII-only ("·" is fine). Leave RECIPIENT_SPLASH2 unset for one line.
+//   #define RECIPIENT_SPLASH  "For Firstname"
+//   #define RECIPIENT_SPLASH2 "Stay grounded - Uncle Scott"
 
 // Firmware-update (OTA) password — protects /update, the only firmware-flash path.
 // Pick a unique value per device and write it on the recovery card.

@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.14.6"  // web cosmetic: 3 map ring labels (match device); settings Display|Guide order
+#define FIRMWARE_VERSION "0.14.7"  // splash: optional second personal line (dedication + tagline)
 
 // ---- Per-build personalization (gitignored include/personalization.h) ----
 // Included FIRST so the #ifndef-guarded defaults below — RECIPIENT_SPLASH, OTA_PASSWORD,
@@ -39,6 +39,10 @@
 // PERSONAL DATA — never commit it to this public repo. Absent the file, a generic tagline shows.
 #ifndef RECIPIENT_SPLASH
 #define RECIPIENT_SPLASH "Live regional seismicity"
+#endif
+// Optional SECOND splash line (tagline + signature). Empty -> single-line splash (the default).
+#ifndef RECIPIENT_SPLASH2
+#define RECIPIENT_SPLASH2 ""
 #endif
 
 // ---- OTA credentials (settings-page firmware update) ----
