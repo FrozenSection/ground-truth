@@ -99,7 +99,8 @@ function drawMap(add,d){
  add(el("line",{x1:204,y1:92,x2:204,y2:241,stroke:"#000"}));
  const cx=100,cy=170,Ro=58;[58,47,34].forEach((r,i)=>add(el("circle",{cx,cy,r,fill:"none",stroke:"#000","stroke-dasharray":i?"1.5 3":"0"})));
  add(el("line",{x1:cx-6,y1:cy,x2:cx+6,y2:cy,stroke:"#000"}));add(el("line",{x1:cx,y1:cy-6,x2:cx,y2:cy+6,stroke:"#000"}));
- add(tx(cx,104,"N",{"font-size":9,"font-weight":700,"text-anchor":"middle"}));add(tx(133,221,d.loc.radiusKm+" km",{"font-size":8.5}));
+ add(tx(cx,104,"N",{"font-size":9,"font-weight":700,"text-anchor":"middle"}));
+ const R=d.loc.radiusKm;[[34,230,Math.round(R/3)],[47,180,Math.round(2*R/3)],[58,130,R]].forEach(([rr,bd,v])=>{const a=bd*Math.PI/180;add(tx(cx+rr*Math.sin(a),cy-rr*Math.cos(a)+3,v+"km",{"font-size":8.5,"text-anchor":"middle"}));});
  const plot=(dk,bd)=>{const r=Ro*Math.sqrt(Math.min(dk,d.loc.radiusKm)/d.loc.radiusKm),a=bd*Math.PI/180;return [(cx+r*Math.sin(a)).toFixed(1),(cy-r*Math.cos(a)).toFixed(1)];};
  (d.events||[]).forEach(q=>{if(q.head||q.cl)return;const [x,y]=plot(q.dk,q.bd),rad=q.mag>=4?5:q.mag>=3?3.4:2.3;add(el("circle",{cx:x,cy:y,r:rad,fill:q.dep>=8?"#000":"none",stroke:"#000"}));});
  (d.clusters||[]).forEach(c=>{const [x,y]=plot(c.dk,c.bd);add(el("circle",{cx:x,cy:y,r:10,fill:"none",stroke:"#000","stroke-dasharray":"2 2.5"}));add(el("circle",{cx:x,cy:y,r:5,fill:"#000"}));add(tx(+x+10,+y-6,"×"+c.n,{"font-size":11,"font-weight":700}));});
@@ -203,7 +204,7 @@ button{margin-top:14px;font:inherit;padding:.55rem 1rem;border:0;border-radius:7
 button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 .msg{font-size:13px;color:#1a7f37;margin-top:10px;margin-left:14px}
 </style></head><body><div class="wrap">
-<div class="top"><h1>Settings</h1><span><a href="/guide">Guide</a> &nbsp;·&nbsp; <a href="/">‹ Display</a></span></div>
+<div class="top"><h1>Settings</h1><span><a href="/">‹ Display</a> &nbsp;·&nbsp; <a href="/guide">Guide</a></span></div>
 
 <h2>Location</h2>
 <div class="card"><form id="cfg">

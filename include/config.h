@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "0.14.5"  // harden fetch: bound TLS handshake/connect (was 120s default > WDT); WDT 30->45s
+#define FIRMWARE_VERSION "0.14.6"  // web cosmetic: 3 map ring labels (match device); settings Display|Guide order
 
 // ---- Per-build personalization (gitignored include/personalization.h) ----
 // Included FIRST so the #ifndef-guarded defaults below — RECIPIENT_SPLASH, OTA_PASSWORD,
