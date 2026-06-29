@@ -208,6 +208,13 @@ void loop() {
     delay(400);
     ESP.restart();
   }
+  if (web::consumeFactoryReset()) {
+    Serial.println(F("[main] FACTORY RESET -> erasing all NVS, rebooting to defaults"));
+    epd::message("Factory reset", "restoring defaults...", "rebooting...");
+    settings::factoryReset();
+    delay(400);
+    ESP.restart();
+  }
   if (web::consumeReboot()) {
     Serial.println(F("[main] reboot requested (settings/OTA)"));
     epd::message("Rebooting", "applying settings...");

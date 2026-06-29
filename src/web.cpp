@@ -18,7 +18,7 @@
 namespace {
   AsyncWebServer server(WEB_PORT);
   bool g_started = false;
-  volatile bool g_reboot = false, g_wifiReset = false;
+  volatile bool g_reboot = false, g_wifiReset = false, g_factoryReset = false;
   volatile bool g_configMode = false;   // button-hold AP active -> captive-redirect unknown paths
   volatile bool g_hasPending = false;   // a validated Config is queued for the loop to apply (#2)
   settings::Config g_pendingCfg;        // guarded by g_stateMutex
@@ -275,6 +275,11 @@ button.warn{background:#fff;color:#a3301f;border:1px solid #d8a99f}
 <h2>Firmware</h2>
 <div class="card"><a href="/update">Open firmware update (OTA) ›</a>
 <p style="font-size:12px;color:#666;margin:8px 0 0">Asks for a username/password — that's the device's update credential.</p></div>
+
+<h2>Factory reset</h2>
+<div class="card">
+<p style="font-size:12px;color:#666;margin:0 0 .5rem">Erases all settings and the saved WiFi, returning the device to factory defaults (Davis, CA · Pacific · 300 km · M2.5). Use it to start fresh or before handing the device on.</p>
+<button class="warn" onclick="act('/api/factory-reset','Erase ALL settings and the saved WiFi, and restore factory defaults? This cannot be undone.')">Reset to factory defaults</button></div>
 
 <h2>Actions</h2>
 <div class="card">
@@ -597,6 +602,9 @@ void begin() {
   server.on("/api/wifi/reset", HTTP_POST, [](AsyncWebServerRequest* r) {
     r->send(200, "application/json", "{\"ok\":true}"); g_wifiReset = true;
   });
+  server.on("/api/factory-reset", HTTP_POST, [](AsyncWebServerRequest* r) {
+    r->send(200, "application/json", "{\"ok\":true}"); g_factoryReset = true;
+  });
   server.on("/api/wifi/enable", HTTP_POST, [](AsyncWebServerRequest* r) {
     bool on = r->hasParam("on", true) && r->getParam("on", true)->value() == "1";
     settings::Config c = currentConfigLocked(); c.wifiEnabled = on; queueConfig(c);
@@ -635,6 +643,7 @@ void loop() { ElegantOTA.loop(); }
 
 bool consumeReboot()      { if (g_reboot)      { g_reboot = false;      return true; } return false; }
 bool consumeWifiReset()   { if (g_wifiReset)   { g_wifiReset = false;   return true; } return false; }
+bool consumeFactoryReset(){ if (g_factoryReset){ g_factoryReset = false; return true; } return false; }
 bool consumePendingConfig(settings::Config& out) {
   if (!g_hasPending) return false;                       // cheap unlocked pre-check
   std::lock_guard<std::mutex> lk(g_stateMutex);

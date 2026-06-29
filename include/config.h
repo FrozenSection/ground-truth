@@ -7,7 +7,7 @@
 // ---- Firmware version (SemVer) ----
 // Bump PATCH on every flash during multi-flash debug so the boot banner / About
 // screen confirms the binary took. MINOR per gate/feature.
-#define FIRMWARE_VERSION "1.0.0"  // ship release
+#define FIRMWARE_VERSION "1.1.0"  // factory reset (settings button + DEFAULT_NAME)
 
 // ---- Per-build personalization (gitignored include/personalization.h) ----
 // Included FIRST so the #ifndef-guarded defaults below — RECIPIENT_SPLASH, OTA_PASSWORD,
@@ -123,6 +123,7 @@
 #define DEFAULT_LOC_MODE   "manual"   // ship pointed at Davis; auto IP-geo is the option
 #define DEFAULT_LAT        38.5449f   // UC Davis
 #define DEFAULT_LON        -121.7405f
+#define DEFAULT_NAME       "Davis, CA"  // location label (factory default; matches the Davis coords)
 #define DEFAULT_RADIUS_KM  300
 #define DEFAULT_MIN_MAG    2.5f
 #define DEFAULT_UNITS      "km"       // geology/USGS convention; depth already km

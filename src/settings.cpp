@@ -2,6 +2,7 @@
 #include "config.h"
 #include "statelock.h"
 #include <Preferences.h>
+#include <nvs_flash.h>
 #include <math.h>
 
 namespace {
@@ -53,7 +54,7 @@ void begin() {
   g.clock24h  = p.getBool ("h24",    DEFAULT_CLOCK_24H);
   g.wifiEnabled = p.getBool("wifi_on", true);   // default on; flipped off for dorm Ethernet-only
   g.tz        = p.getString("tz",    DEFAULT_TZ);
-  g.name      = p.getString("name",  "");
+  g.name      = p.getString("name",  DEFAULT_NAME);
   g.fdsnUrl   = p.getString("fdsn",  DEFAULT_FDSN_URL);
   p.end();
   g.unitsKm = true;                 // km everywhere — miles dropped (rings/depth are km)
@@ -64,6 +65,15 @@ void begin() {
 }
 
 const Config& get() { return g; }
+
+// Factory reset: erase the ENTIRE NVS partition — WiFi creds (provisioning "wifi" ns), all config
+// ("cfg"), the record high-water ("rec"), and the saved view — so the next boot comes up on the
+// compiled defaults (Davis · Pacific · 300 km · M2.5, WiFi unprovisioned). Caller reboots after.
+void factoryReset() {
+  nvs_flash_erase();   // wipe the whole partition
+  nvs_flash_init();    // re-create an empty, valid NVS for the next boot
+  Serial.println(F("[cfg] FACTORY RESET — all NVS erased"));
+}
 
 bool tzAllowed(const String& tz) {
   for (const char* t : ALLOWED_TZ) if (tz == t) return true;

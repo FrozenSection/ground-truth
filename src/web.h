@@ -14,6 +14,7 @@ namespace web {
   // Actions requested from the web (consumed by the main loop, which owns reboot).
   bool consumeReboot();
   bool consumeWifiReset();
+  bool consumeFactoryReset();
   // Settings saved from the web are queued (validated) and applied by the main loop, never
   // mutated from the async task. Returns true + fills `out` when a save is pending. (#2)
   bool consumePendingConfig(settings::Config& out);

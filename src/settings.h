@@ -24,6 +24,7 @@ namespace settings {
   void begin();
   const Config& get();
   void update(const Config& c);   // write all fields to NVS + update the live copy
+  void factoryReset();            // erase ALL NVS (creds + config + record + view); caller reboots
 
   // Reject out-of-range / non-finite input (browser controls are not a boundary).
   // Returns false with a field-specific message in `err`.
